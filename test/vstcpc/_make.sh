@@ -4,5 +4,5 @@
   --input-file ../vstcpd/vstcpd.vsidl \
   --client-out-dir client
 
-make all -j4
+make all
 

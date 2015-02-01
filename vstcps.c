@@ -86,6 +86,8 @@ static void *vstcps_listen_port_thread(void *arg)
     // check connections number
     if (server->count >= server->max_clients)
     { // too many connections - disconnect
+      VSTCPS_DBG("Connection rejected (count=%i >= max_clients=%i)",
+                 server->count, server->max_clients);
       vsmutex_unlock(&server->mtx_list);
       sl_disconnect(fd);
       continue;
