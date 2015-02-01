@@ -5,7 +5,7 @@
 # File: "vsrpc_idl.sh"
 # 
 # Copyright (c) 2005, 2006, 2007, 2008
-#   a.grinkov@gmail.com, All rights reserved.
+#   a.grinkov@gmail.com. All rights reserved.
 #
 #
 # Redistribution and use in source and binary forms, with or without

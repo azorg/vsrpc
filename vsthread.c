@@ -354,14 +354,14 @@ int vsthread_create(
 
   if (thread->handle == NULL)
   {
-    VSTHREAD_DBG("Ooops; error of CreateThread(): \"%d\"", GetLastError());
+    VSTHREAD_DBG("Ooops; error of CreateThread(): \"%d\"", (int) GetLastError());
     goto err;
   }
 
   ret = SetThreadPriority(thread->handle, priority);
   if (!ret)
   {
-    VSTHREAD_DBG("Ooops; error of SetThreadPriority(): \"%d\"", GetLastError());
+    VSTHREAD_DBG("Ooops; error of SetThreadPriority(): \"%d\"", (int) GetLastError());
     goto err;
   }
 
@@ -407,7 +407,8 @@ int vsthread_join(
   err = WaitForSingleObject(thread.handle, INFINITE);
   if (err == WAIT_FAILED)
   {
-    VSTHREAD_DBG("Ooops; WaitForSingleObject failure: \"%d\"", GetLastError());
+    VSTHREAD_DBG("Ooops; WaitForSingleObject failure: \"%d\"",
+                 (int) GetLastError());
     return -1; // error
   }
 

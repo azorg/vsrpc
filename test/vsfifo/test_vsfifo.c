@@ -48,12 +48,13 @@ int main()
   
   vsfifo_clear(fifo);
   
-  vsthread_create(10, SCHED_FIFO, &thr, thread, NULL);
-
-  printf("press ENTER to write to fifo %i bytes\n", (int) sizeof(ret));
+  vsthread_create(16, SCHED_FIFO, &thr, thread, NULL);
+                    
+  ret = 0xABCDEF;
+  printf("press ENTER to write to fifo %i bytes (0x%X)\n",
+         (int) sizeof(ret), ret);
   fgetc(stdin);
   
-  ret = 0xABCDEF;
   vsfifo_write(fifo, &ret, sizeof(ret));
   
   printf("press ENTER to stop\n");

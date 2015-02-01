@@ -5,6 +5,7 @@
 
 //----------------------------------------------------------------------------
 #include <stdio.h>
+//#include <time.h>
 #include "socklib.h"
 #include "vstcpc.h"
 #include "vstcpd_wrap.h"
@@ -16,6 +17,7 @@
 //----------------------------------------------------------------------------
 double get_time()
 {
+#ifndef VSWIN32
   struct timespec tv;
   double t;
   
@@ -24,6 +26,9 @@ double get_time()
   t += ((double) tv.tv_sec);
 
   return t;
+#else
+  return 0.; // FIXME under Windows
+#endif
 }
 //----------------------------------------------------------------------------
 char buf[1024 * 1024 * 16];
@@ -59,8 +64,10 @@ int main()
   printf("t2 - t1 = %f (vsrpc_remote_ping)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
   if (err != VSRPC_ERR_NONE)
+  {
     fprintf(stderr, "vsrpc_remote_ping() error %i\n", err);
-
+    exit(1); // FIXME
+  }
   // ping #2
   vsmutex_lock(&obj.mtx_rpc);
   t1 = get_time();

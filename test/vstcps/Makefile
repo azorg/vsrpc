@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------
 OUT_NAME     := vstcps_test
 OUT_DIR      := .
-CLEAN_FILES := "$(OUT_DIR)/$(OUT_NAME).exe"
+#CLEAN_FILES := "$(OUT_DIR)/$(OUT_NAME).exe"
 #----------------------------------------------------------------------------
 # 1-st way to select source files
 SRCS := \
@@ -21,13 +21,19 @@ HDRS := \
 #SRC_DIRS := . ../..
 #HDR_DIRS := . ../..
 #----------------------------------------------------------------------------
-#DEFS   := -DVSTHREAD_LINUX -DVSTCPS_DEBUG -DVSTHREAD_DEBUG
-DEFS    := -DVSTHREAD_LINUX -DVSTCPS_DEBUG -DVSTHREAD_DEBUG -DVSTHREAD_POOL 
-OPTIM   := -O3
-WARN    := -Wall
-CFLAGS  := $(DEFS) $(OPTIM) $(WARN) -pipe $(CFLAGS)
-LDFLAGS := -lpthread
+OPTIM := -O3
+WARN  := -Wall
 #----------------------------------------------------------------------------
+ifndef WIN32
+# Linux:
+DEFS  := -DVSTCPS_DEBUG -DVSTHREAD_DEBUG -DVSTHREAD_LINUX
+#DEFS := -DVSTCPS_DEBUG -DVSTHREAD_DEBUG -DVSTHREAD_LINUX -DVSTHREAD_POOL 
+else
+# Windows (MinGW):
+DEFS  := -DVSTCPS_DEBUG -DVSTHREAD_DEBUG -DVSTHREAD_POOL 
+endif
+#----------------------------------------------------------------------------
+include ../Makefile.os
 include ../Makefile.skel
 #----------------------------------------------------------------------------
 

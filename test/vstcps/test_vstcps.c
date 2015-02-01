@@ -44,7 +44,7 @@ void on_exchange(
   if (i > 0)
   {
     buf[i] = '\0';
-    printf("Client get: '%s'\n", buf);
+    printf("Client get: %s\n", buf);
   }
   sl_write(fd, (const void*) msg2, strlen(msg2));
   
@@ -67,9 +67,11 @@ void on_foreach(
   int client_index,      // client index (< client_count)
   int client_count)      // client count
 {
-  char msg[100];
-  sprintf(msg, ">>> index=%i count=%i\n", client_index, client_count);
-  printf("%s", msg);
+  char msg[512];
+  printf("<<< send broadcast message for each clients (index=%i count=%i)\n",
+          client_index, client_count);
+  sprintf(msg, "\n>>> broadcast message from server (index=%i count=%i)\n",
+          client_index, client_count);
   sl_write(fd, msg, strlen(msg));
 }
 //----------------------------------------------------------------------------

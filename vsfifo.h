@@ -4,7 +4,7 @@
  * File: "vsfifo.h"
  *
  * Copyright (c) 2005, 2006, 2007, 2008
- *   a.grinkov@gmail.com, shmigirilov@gmail.com. All rights reserved.
+ *   a.grinkov@gmail.com. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,22 +34,22 @@
 #ifndef VSFIFO_H
 #define VSFIFO_H
 //----------------------------------------------------------------------------
+#include "vssync.h" // vsset_t
+//----------------------------------------------------------------------------
 // add receive/send functions from/to pipe
 #define VSFIFO_PIPE
 
 // add functions to work with UNIX file descriptors
 #define VSFIFO_UNIX
 
-#include <semaphore.h>
-//----------------------------------------------------------------------------
 typedef struct vsfifo_ vsfifo_t;
 struct vsfifo_ {
-  char *data; // pointer to FIFO buffer
-  char *in;   // pointer for next input data
-  char *out;  // pointer to next output data
-  int count;  // data counter
-  int size;   // FIFO size
-  sem_t read_sem;   // block read wait semaphore
+  char *data;       // pointer to FIFO buffer
+  char *in;         // pointer for next input data
+  char *out;        // pointer to next output data
+  int count;        // data counter
+  int size;         // FIFO size
+  vssem_t read_sem; // block read wait semaphore
 };
 //----------------------------------------------------------------------------
 #ifdef __cplusplus

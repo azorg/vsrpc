@@ -35,7 +35,7 @@
 #include <string.h>  // memset(), memcpy()
 #include "socklib.h"
 // ---------------------------------------------------------------------------
-#ifdef SL_WIN32
+#ifdef SL_WIN32 // winsock
 #  include <windows.h>
 #  include <winsock.h>
    typedef int socklen_t;
@@ -57,32 +57,32 @@
 
 #ifndef SL_WIN32
 #  ifdef SL_USE_POLL
-#  include <sys/poll.h> // poll()
+#    include <sys/poll.h> // poll()
 #  else
-#  include <sys/select.h> // select() [POSIX way]
+#    include <sys/select.h> // select() [POSIX way]
 #  endif // SL_USE_POLL
 #endif // SL_WIN32
 // ---------------------------------------------------------------------------
 static int sl_initialized = 0;
 // ---------------------------------------------------------------------------
 const char *errors[] = {
-               "no error",
-               "initialize error",
-               "socket() error",
-               "inet_aton() error",
-               "bind() error",
-               "listen() error",
-               "gethostbyname() error",
-               "connect() error",
-               "accept() error",
-               "pool() error",
-               "select() error",
-               "read error",
-               "write error",
-               "disconnect error",
-               "socklib already initialized",
-               "socklib not initialized",
-               "timeout",
+  "no error",
+  "initialize error",
+  "socket() error",
+  "inet_aton() error",
+  "bind() error",
+  "listen() error",
+  "gethostbyname() error",
+  "connect() error",
+  "accept() error",
+  "pool() error",
+  "select() error",
+  "read error",
+  "write error",
+  "disconnect error",
+  "socklib already initialized",
+  "socklib not initialized",
+  "timeout",
 };
 // ---------------------------------------------------------------------------
 // returns socklib error string
@@ -194,7 +194,6 @@ int sl_make_server_socket(int port)
   return sl_make_server_socket_ex("0.0.0.0", port, 1);
 }
 // ---------------------------------------------------------------------------
-#include <stdio.h>
 // make client TCP/IP socket
 int sl_connect_to_server(const char *host, int port)
 {

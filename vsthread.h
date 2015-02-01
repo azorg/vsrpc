@@ -34,6 +34,8 @@
 #ifndef VSTHREAD_H
 #define VSTHREAD_H
 //----------------------------------------------------------------------------
+#include "vssync.h"
+//----------------------------------------------------------------------------
 // version for Linux
 //#define VSTHREAD_LINUX
 
@@ -66,16 +68,18 @@
 #  ifndef VSWIN32
 #    define VSWIN32
 #  endif
+#  undef VSTHREAD_POOL
 #endif
 //----------------------------------------------------------------------------
 #ifdef VSTHREAD_DEBUG
-#  include <stdio.h>  // fprintf()
+#  include <stdio.h>  // fprintf(), vfprintf()
 #  include <string.h> // strerror()
-#  ifdef VSWIN32
+#  if defined(__GNUC__)
+#    define VSTHREAD_DBG(fmt, arg...) fprintf(stderr, "VSTHREAD: " fmt "\n", ## arg)
+#  elif defined(VSWIN32)
 #    define VSTHREAD_DBG(fmt, ...) fprintf(stderr, "VSTHREAD: " fmt "\n", __VA_ARGS__)
 #  elif defined(__BORLANDC__)
 #    include <stdarg.h> // va_list, va_start(), va_end()
-#    include <stdio.h>  // fprintf(), vfprintf()
 void VSTHREAD_DBG(const char *fmt, ...)
 {
   va_list ap;
@@ -85,21 +89,28 @@ void VSTHREAD_DBG(const char *fmt, ...)
   va_end(ap);
 }
 #  else
+#    warning "unknown compiler"
 #    define VSTHREAD_DBG(fmt, arg...) fprintf(stderr, "VSTHREAD: " fmt "\n", ## arg)
 #  endif
 #else
-#  define VSTHREAD_DBG(fmt, ...)
-#endif
+#  define VSTHREAD_DBG(fmt, ...) // debug output off
+#endif // VSTHREADS_DEBUG
 //----------------------------------------------------------------------------
-#ifndef VSWIN32
-  #include <pthread.h>
-  #include <semaphore.h>
-#else
-  #include <windows.h>
-  #undef VSTHREAD_POOL
-#endif
-                   
-#include "vssync.h"
+#ifdef VSWIN32
+// SCHED_* constants unused under Windows
+# ifndef SCHED_OTHER
+#   define SCHED_OTHER    1
+# endif
+# ifndef SCHED_RR
+#   define SCHED_RR       2
+# endif
+# ifndef SCHED_FIFO
+#   define SCHED_FIFO     3
+# endif
+# ifndef SCHED_DEADLINE
+#   define SCHED_DEADLINE 4
+# endif
+#endif // VSWIN32
 //----------------------------------------------------------------------------
 //
 // Structures

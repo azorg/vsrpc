@@ -4,7 +4,7 @@
  * File: "vstcpd.h"
  *
  * Copyright (c) 2005, 2006, 2007, 2008
- *   a.grinkov@gmail.com, All rights reserved.
+ *   a.grinkov@gmail.com. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -43,19 +43,15 @@
 // include debuging output
 //#define VSTCPD_DEBUG
 //----------------------------------------------------------------------------
-#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__))
-#  ifndef VSWIN32
-#    define VSWIN32
-#  endif
-#endif
-//----------------------------------------------------------------------------
 #ifdef VSTCPD_DEBUG
-#  include <stdio.h> // fprintf()
-#  ifdef VSWIN32
+#  include <stdio.h>  // fprintf(), vfprintf()
+#  include <string.h> // strerror()
+#  if defined(__GNUC__)
+#    define VSTCPD_DBG(fmt, arg...) fprintf(stderr, "VSTCPD: " fmt "\n", ## arg)
+#  elif defined(VSWIN32)
 #    define VSTCPD_DBG(fmt, ...) fprintf(stderr, "VSTCPD: " fmt "\n", __VA_ARGS__)
 #  elif defined(__BORLANDC__)
 #    include <stdarg.h> // va_list, va_start(), va_end()
-#    include <stdio.h>  // vfprintf()
 void VSTCPD_DBG(const char *fmt, ...)
 {
   va_list ap;
@@ -65,11 +61,12 @@ void VSTCPD_DBG(const char *fmt, ...)
   va_end(ap);
 }
 #  else
+#    warning "unknown compiler"
 #    define VSTCPD_DBG(fmt, arg...) fprintf(stderr, "VSTCPD: " fmt "\n", ## arg)
 #  endif
 #else
-#  define VSTCPD_DBG(fmt, ...)
-#endif
+#  define VSTCPD_DBG(fmt, ...) // debug output off
+#endif // VSTCPD_DEBUG
 //----------------------------------------------------------------------------
 typedef struct vstcpd_ vstcpd_t;
 typedef struct vstcpd_client_ vstcpd_client_t;

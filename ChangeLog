@@ -1,10 +1,11 @@
 This is the ChangeLog of Very Simple Remote Procedure Call Project (VSRPC)
- + added (добавлено)
- - removed (удалено)
- * changed (исправлено)
+ + added
+ - removed
+ * changed
 
 2015.02.01 [grinkov]
  * back files from old backup, fix some bugs and commit in Git
+ * test under Windows 8.1 (MinGW32), fix and update
 
 <-- *** -->
 

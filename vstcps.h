@@ -40,19 +40,15 @@
 // include debuging output
 //#define VSTCPS_DEBUG
 //----------------------------------------------------------------------------
-#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__))
-#  ifndef VSWIN32
-#    define VSWIN32
-#  endif
-#endif
-//----------------------------------------------------------------------------
 #ifdef VSTCPS_DEBUG
-#  include <stdio.h> // fprintf()
-#  ifdef VSWIN32
+#  include <stdio.h>  // fprintf(), vfprintf()
+#  include <string.h> // strerror()
+#  if defined(__GNUC__)
+#    define VSTCPS_DBG(fmt, arg...) fprintf(stderr, "VSTCPS: " fmt "\n", ## arg)
+#  elif defined(VSWIN32)
 #    define VSTCPS_DBG(fmt, ...) fprintf(stderr, "VSTCPS: " fmt "\n", __VA_ARGS__)
 #  elif defined(__BORLANDC__)
 #    include <stdarg.h> // va_list, va_start(), va_end()
-#    include <stdio.h>  // vfprintf()
 void VSTCPS_DBG(const char *fmt, ...)
 {
   va_list ap;
@@ -62,11 +58,12 @@ void VSTCPS_DBG(const char *fmt, ...)
   va_end(ap);
 }
 #  else
+#    warning "unknown compiler"
 #    define VSTCPS_DBG(fmt, arg...) fprintf(stderr, "VSTCPS: " fmt "\n", ## arg)
 #  endif
 #else
-#  define VSTCPS_DBG(fmt, ...)
-#endif
+#  define VSTCPS_DBG(fmt, ...) // debug output off
+#endif // VSTCPS_DEBUG
 //----------------------------------------------------------------------------
 // error codes of vstcps_start()
 #define VSTCPS_ERR_NONE    0 // no error all success

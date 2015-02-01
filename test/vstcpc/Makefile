@@ -1,6 +1,6 @@
 OUT_NAME     := test_vstcpc
 OUT_DIR      := .
-CLEAN_FILES := "$(OUT_DIR)/$(OUT_NAME).exe"
+#CLEAN_FILES := "$(OUT_DIR)/$(OUT_NAME).exe"
 #----------------------------------------------------------------------------
 # 1-st way to select source files
 #SRCS := 
@@ -10,12 +10,19 @@ CLEAN_FILES := "$(OUT_DIR)/$(OUT_NAME).exe"
 SRC_DIRS := . ../.. client ../../socklib
 HDR_DIRS := . ../.. client ../../socklib
 #----------------------------------------------------------------------------
-DEFS    := -DVSTCPC_DEBUG
-OPTIM   := -O3
-WARN    := -Wall
-CFLAGS  := $(DEFS) $(OPTIM) $(WARN) -pipe $(CFLAGS)
-LDFLAGS := -lpthread -lrt
+OPTIM := -O3
+WARN  := -Wall
 #----------------------------------------------------------------------------
+ifndef WIN32
+# Linux:
+DEFS  := -DVSTCPC_DEBUG -DVSTHREAD_DEBUG -DVSTHREAD_LINUX_RT
+#DEFS := -DVSTCPC_DEBUG -DVSTHREAD_DEBUG -DVSTHREAD_LINUX -DVSTHREAD_POOL 
+else
+# Windows (MinGW):
+DEFS  := -DVSTCPC_DEBUG -DVSTHREAD_DEBUG 
+endif
+#----------------------------------------------------------------------------
+include ../Makefile.os
 include ../Makefile.skel
 #----------------------------------------------------------------------------
 

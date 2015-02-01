@@ -44,19 +44,15 @@
 // include debuging output
 //#define VSTCPC_DEBUG
 //----------------------------------------------------------------------------
-#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__))
-#  ifndef VSWIN32
-#    define VSWIN32
-#  endif
-#endif
-//----------------------------------------------------------------------------
 #ifdef VSTCPC_DEBUG
-#  include <stdio.h> // fprintf()
-#  ifdef VSWIN32
+#  include <stdio.h>  // fprintf(), vfprintf()
+#  include <string.h> // strerror()
+#  if defined(__GNUC__)
+#    define VSTCPC_DBG(fmt, arg...) fprintf(stderr, "VSTCPC: " fmt "\n", ## arg)
+#  elif defined(VSWIN32)
 #    define VSTCPC_DBG(fmt, ...) fprintf(stderr, "VSTCPC: " fmt "\n", __VA_ARGS__)
 #  elif defined(__BORLANDC__)
 #    include <stdarg.h> // va_list, va_start(), va_end()
-#    include <stdio.h>  // vfprintf()
 void VSTCPC_DBG(const char *fmt, ...)
 {
   va_list ap;
@@ -66,11 +62,12 @@ void VSTCPC_DBG(const char *fmt, ...)
   va_end(ap);
 }
 #  else
+#    warning "unknown compiler"
 #    define VSTCPC_DBG(fmt, arg...) fprintf(stderr, "VSTCPC: " fmt "\n", ## arg)
 #  endif
 #else
-#  define VSTCPC_DBG(fmt, ...)
-#endif
+#  define VSTCPC_DBG(fmt, ...) // debug output off
+#endif // VSTCPC_DEBUG
 //----------------------------------------------------------------------------
 // main server structure
 typedef struct {

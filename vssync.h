@@ -4,7 +4,7 @@
  * File: "vssync.h"
  *
  * Copyright (c) 2008 
- *   shmigirilov@gmail.com. All rights reserved.
+ *   shmigirilov@gmail.com, a.grinkov@gmail.com. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,15 +36,15 @@
 #define VSSYNC_H
 // ------------------------------------------------------------------
 #if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__))
-#  define VSSYNC_WIN32
+#  define VSWIN32
 #endif
 // ------------------------------------------------------------------
-#ifdef VSSYNC_WIN32
-# include <windows.h>
-#else // VSSYNC_WIN32
-# include <semaphore.h> // sem_t
-# include <pthread.h>   // pthread_mutex_t
-#endif // VSSYNC_WIN32
+#ifdef VSWIN32
+#  include <windows.h>
+#else
+#  include <semaphore.h> // sem_t
+#  include <pthread.h>   // pthread_mutex_t
+#endif
 // ------------------------------------------------------------------
 #ifdef __cplusplus
 extern "C" {
@@ -53,11 +53,11 @@ extern "C" {
 // 'like POSIX' semaphores implementation
 typedef struct
 {
-#ifdef VSSYNC_WIN32
-    HANDLE  win_sem;
-#else // VSSYNC_WIN32
+#ifdef VSWIN32
+    HANDLE win_sem;
+#else
     sem_t pth_sem; 
-#endif // VSSYNC_WIN32
+#endif
 }
 vssem_t;
 // ------------------------------------------------------------------
@@ -82,11 +82,11 @@ int vssem_getvalue(vssem_t * sem, int *sval);
 // 'like POSIX' mutexes implementation
 typedef struct 
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     HANDLE win_mtx;
-#else // VSSYNC_WIN32
+#else
     pthread_mutex_t pth_mtx;
-#endif // VSSYNC_WIN32
+#endif
 }
 vsmutex_t;
 // ------------------------------------------------------------------
@@ -108,4 +108,6 @@ int vsmutex_unlock(vsmutex_t *mtx);
 // ------------------------------------------------------------------
 #endif // VSSYNC_H
 // ------------------------------------------------------------------
-// EOF
+
+/*** end of "vssync.h" file ***/
+

@@ -4,7 +4,7 @@
  * File: "vsfifo.c"
  *
  * Copyright (c) 2005, 2006, 2007, 2008
- *   a.grinkov@gmail.com, shmigirilov@gmail.com. All rights reserved.
+ *   a.grinkov@gmail.com. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,15 +35,14 @@
 #include <stdlib.h> // malloc(), free(), NULL
 #include <string.h> // memcpy()
 #include <stdio.h>
-#include <semaphore.h>
 
 #include "vsfifo.h"
 
 #ifdef VSFIFO_UNIX
 #  include <unistd.h> // read(), write()
-#  include <errno.h> // errno
+#  include <errno.h>  // errno
 #endif // VSFIFO_UNIX
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // print FIFO values
 void vsfifo_show(vsfifo_t *fifo)
 {
@@ -55,7 +54,7 @@ void vsfifo_show(vsfifo_t *fifo)
   printf("count: %d\n", fifo->count);
   printf("size: %d\n", fifo->size);
 
-  sem_getvalue(&(fifo->read_sem), &semval);
+  vssem_getvalue(&(fifo->read_sem), &semval);
 
   printf("sem_value: %d\n", semval);
 }
@@ -70,7 +69,7 @@ int vsfifo_init(vsfifo_t *fifo, int size)
     (char*) malloc((size_t) (fifo->size = size));
   if (fifo->data == (char*) NULL) return -1; // error: out of memory
 
-  ret = sem_init(&(fifo->read_sem), 0, 0);
+  ret = vssem_init(&(fifo->read_sem), 0, 0);
   if (ret == -1)
     return -2;
 
@@ -125,7 +124,7 @@ int vsfifo_write(vsfifo_t *fifo, const void *buf, int count)
   }
   fifo->count += count;
 
-  sem_post(&(fifo->read_sem));
+  vssem_post(&(fifo->read_sem));
 
   return count;
 }
@@ -165,7 +164,7 @@ int vsfifo_read(vsfifo_t *fifo, void *buf, int count)
 
   // wait until fifo size lesser then requested
   while (count > fifo->count)
-    sem_wait(&(fifo->read_sem));
+    vssem_wait(&(fifo->read_sem));
 
   tail = fifo->data + fifo->size - fifo->out;
   if (count <= tail)
@@ -184,7 +183,7 @@ int vsfifo_read(vsfifo_t *fifo, void *buf, int count)
   }
   fifo->count -= count;
 
-  sem_init(&(fifo->read_sem), 0, 0);
+  vssem_init(&(fifo->read_sem), 0, 0);
 
   return count;
 }

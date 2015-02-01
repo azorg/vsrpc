@@ -4,7 +4,7 @@
  * File: "vssync.c"
  *
  * Copyright (c) 2008 
- *   shmigirilov@gmail.com. All rights reserved.
+ *   shmigirilov@gmail.com, a.grinkov@gmail.com. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,17 +34,11 @@
 // ---------------------------------------------------------------------------
 #include <stdlib.h>
 #include "vssync.h"
-
-#ifdef VSSYNC_WIN32
-# include <windows.h>
-#else // VSSYNC_WIN32
-# include <semaphore.h>
-#endif // VSSYNC_WIN32
 // ---------------------------------------------------------------------------
 // create semaphore object
 int vssem_init(vssem_t * sem, int pshared, unsigned int value)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     pshared = pshared; // unused
 
     sem->win_sem = CreateSemaphore(
@@ -58,15 +52,15 @@ int vssem_init(vssem_t * sem, int pshared, unsigned int value)
         return -1;
 
     return 0;
-#else // VSSYNC_WIN32
+#else
     return sem_init(&(sem->pth_sem), pshared, value);
-#endif // VSSYNC_WIN32     
+#endif     
 }
 // ---------------------------------------------------------------------------
 // destroy semaphore object
 int vssem_destroy(vssem_t * sem)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     BOOL ret;
 
     ret = CloseHandle(sem->win_sem);
@@ -75,15 +69,15 @@ int vssem_destroy(vssem_t * sem)
         return -1;
     else
         return 0;
-#else // VSSYNC_WIN32
+#else
     return sem_destroy(&(sem->pth_sem));
-#endif // VSSYNC_WIN32     
+#endif     
 }
 // ---------------------------------------------------------------------------
 // blocking decrement semaphore
 int vssem_wait(vssem_t * sem)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     int ret;
 
     // decrease count by 1
@@ -93,15 +87,15 @@ int vssem_wait(vssem_t * sem)
         return -1;
 
     return 0;
-#else // VSSYNC_WIN32
+#else
     return sem_wait(&(sem->pth_sem));
-#endif // VSSYNC_WIN32     
+#endif     
 }
 // ---------------------------------------------------------------------------
 // non-blocking decrement semaphore
 int vssem_trywait(vssem_t * sem)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     int ret;
 
     // decrease count by 1
@@ -113,15 +107,15 @@ int vssem_trywait(vssem_t * sem)
         return -1;
 
     return 0;
-#else // VSSYNC_WIN32
+#else
     return sem_trywait(&(sem->pth_sem));
-#endif // VSSYNC_WIN32     
+#endif     
 }
 // ---------------------------------------------------------------------------
 // increment semaphore
 int vssem_post(vssem_t * sem)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     BOOL ret;
 
     // increase count by 1
@@ -130,12 +124,12 @@ int vssem_post(vssem_t * sem)
         return -1;
 
     return 0;
-#else // VSSYNC_WIN32
+#else
     return sem_post(&(sem->pth_sem));
-#endif // VSSYNC_WIN32     
+#endif     
 }
 // ---------------------------------------------------------------------------
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
 typedef struct _SEMAINFO {
   UINT    Count;    // current semaphore count
   UINT    Limit;    // max semaphore count
@@ -148,12 +142,12 @@ int WINAPI NtQuerySemaphore(
   int InfoSize,
   int *RetLen
 );
-#endif // VSSYNC_WIN32     
+#endif     
 // ---------------------------------------------------------------------------
 // get value of semaphore
 int vssem_getvalue(vssem_t * sem, int *sval)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
   int ret;
   SEMAINFO info;
   int len;
@@ -176,15 +170,15 @@ int vssem_getvalue(vssem_t * sem, int *sval)
     *sval = info.Count;
     return 0;
   }
-#else // VSSYNC_WIN32
+#else
   return sem_getvalue(&(sem->pth_sem), sval);
-#endif // VSSYNC_WIN32     
+#endif     
 }
 // ---------------------------------------------------------------------------
 // create mutex object
 int vsmutex_init(vsmutex_t *mtx)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     mtx->win_mtx = CreateMutex(
                                NULL,     // default security attributes
                                FALSE,    // Initial value
@@ -195,15 +189,15 @@ int vsmutex_init(vsmutex_t *mtx)
         return -1;
 
     return 0;
-#else // VSSYNC_WIN32
+#else
     return pthread_mutex_init(&(mtx->pth_mtx), NULL);
-#endif // VSSYNC_WIN32
+#endif
 }
 // ---------------------------------------------------------------------------
 // destroy mutex object
 int vsmutex_destroy(vsmutex_t *mtx)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     BOOL ret;
 
     ret = CloseHandle(mtx->win_mtx);
@@ -212,15 +206,15 @@ int vsmutex_destroy(vsmutex_t *mtx)
         return -1;
     else
         return 0;
-#else // VSSYNC_WIN32
+#else
     return pthread_mutex_destroy(&(mtx->pth_mtx));
-#endif // VSSYNC_WIN32
+#endif
 }
 // ---------------------------------------------------------------------------
 // lock mutex
 int vsmutex_lock(vsmutex_t *mtx)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     int ret;
 
     // wait until mutex released
@@ -229,15 +223,15 @@ int vsmutex_lock(vsmutex_t *mtx)
         return -1;
 
     return 0;
-#else // VSSYNC_WIN32
+#else
     return pthread_mutex_lock(&(mtx->pth_mtx));
-#endif // VSSYNC_WIN32
+#endif
 }
 // ---------------------------------------------------------------------------
 // unlock mutex
 int vsmutex_unlock(vsmutex_t *mtx)
 {
-#ifdef VSSYNC_WIN32
+#ifdef VSWIN32
     BOOL ret;
 
     ret = ReleaseMutex(mtx->win_mtx);
@@ -245,9 +239,10 @@ int vsmutex_unlock(vsmutex_t *mtx)
         return -1;
 
     return 0;
-#else // VSSYNC_WIN32
+#else
     return pthread_mutex_unlock(&(mtx->pth_mtx));
-#endif // VSSYNC_WIN32
+#endif
 }
 // ---------------------------------------------------------------------------
-// EOF
+
+/*** end of "vssync.c" file ***/

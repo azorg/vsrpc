@@ -35,14 +35,16 @@
 #define SOCKLIB_H
 // ---------------------------------------------------------------------------
 #if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__))
-#  define SL_WIN32
+#  ifndef SL_WIN32
+#    define SL_WIN32
+#  endif
 #endif
 // ---------------------------------------------------------------------------
 // use poll() nor select() in sl_select()
 //#define SL_USE_POLL
 // ---------------------------------------------------------------------------
 
-#ifdef SL_WIN32
+#ifdef SL_WIN32 // winsocks
 #  include <windows.h>
 #  include <winsock.h>
 #else // SL_WIN32
@@ -169,4 +171,3 @@ char *sl_error_str(int err);
 #endif // SOCKLIB_H
 
 /*** end of "socklib.h" file ***/
-

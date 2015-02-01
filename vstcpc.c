@@ -4,7 +4,7 @@
  * File: "vstcpc.h"
  *
  * Copyright (c) 2005, 2006, 2007, 2008
- *   a.grinkov@gmail.com, All rights reserved.
+ *   a.grinkov@gmail.com. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -102,13 +102,15 @@ int vstcpc_start(
   
   // connect to server (make client socket)
   retv = sl_connect_to_server(host, port);
-  VSTCPC_DBG("sl_connect_to_server() finish (retv=%i)", retv);
 
   if (retv < 0)
   {
-    VSTCPC_DBG("Ooops; can't connect to TCP/IP server %s:%i", host, port);
+    VSTCPC_DBG("Ooops; sl_connect_to_server() return %i (%s)",
+               retv, sl_error_str(retv));
+    VSTCPC_DBG("Can't connect to TCP/IP server %s:%i", host, port);
     return -1;
   }
+  VSTCPC_DBG("sl_connect_to_server() finish");
   
   // init VSRPC structure
   vstcpc->fd = retv;
