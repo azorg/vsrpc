@@ -34,6 +34,11 @@ int main()
   int ret;
   vsthread_t thr;
 
+#ifdef VSTHREAD_POOL
+  vsthread_pool_t pool;
+  vsthread_pool_init(&pool, 1, 16, SCHED_OTHER);
+#endif
+
   printf("\npress ENTER to start\n");
   fgetc(stdin);
 
@@ -48,8 +53,12 @@ int main()
   
   vsfifo_clear(fifo);
   
+#ifdef VSTHREAD_POOL
+  vsthread_create(&pool, &thr, thread, NULL);
+#else
   vsthread_create(16, SCHED_FIFO, &thr, thread, NULL);
-                    
+#endif
+
   ret = 0xABCDEF;
   printf("press ENTER to write to fifo %i bytes (0x%X)\n",
          (int) sizeof(ret), ret);
