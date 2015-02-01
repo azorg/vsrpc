@@ -1,0 +1,10 @@
+*.d
+*.o
+.dep
+.obj
+test_vstcps
+test_vstcpd
+test_vstspc
+test_vsfifo
+
+

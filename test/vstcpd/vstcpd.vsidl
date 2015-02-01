@@ -1,0 +1,12 @@
+% int vstcpd_print(char*);
+i vstcpd_print s
+
+% void vstcpd_test(int);
+v vstcpd_test i
+
+% void cap(void);
+v cap
+
+% void while_one(void);
+v while_one
+
