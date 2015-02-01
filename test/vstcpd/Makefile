@@ -4,10 +4,12 @@ OUT_DIR     := .
 CLEAN_FILES := "$(OUT_DIR)/$(OUT_NAME).exe"
 #----------------------------------------------------------------------------
 # 1-st way to select source files
-SRC_DIRS := . ../../ server ../../socklib
+#SRCS := 
+#HDRS := 
 
 # 2-nd way to select source files
-#SRCS := 
+SRC_DIRS := . ../.. server ../../socklib
+HDR_DIRS := . ../.. server ../../socklib
 #----------------------------------------------------------------------------
 #DEFS   := -DVSTCPD_DEBUG -DVSTHREAD_DEBUG -DVSTCPS_DEBUG -DVSTHREAD_LINUX_RT
 DEFS    := -DVSTHREAD_LINUX -DVSTHREAD_POOL \

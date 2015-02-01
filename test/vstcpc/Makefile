@@ -3,10 +3,12 @@ OUT_DIR      := .
 CLEAN_FILES := "$(OUT_DIR)/$(OUT_NAME).exe"
 #----------------------------------------------------------------------------
 # 1-st way to select source files
-SRC_DIRS := . ../../ client ../../socklib
+#SRCS := 
+#HDRS := 
 
 # 2-nd way to select source files
-#SRCS := 
+SRC_DIRS := . ../.. client ../../socklib
+HDR_DIRS := . ../.. client ../../socklib
 #----------------------------------------------------------------------------
 DEFS    := -DVSTCPC_DEBUG
 OPTIM   := -O3
