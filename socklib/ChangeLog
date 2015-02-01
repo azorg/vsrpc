@@ -3,6 +3,9 @@ ChangeLog for TCP/UDP sockets library "socklib".
  - removed
  * changed
 
+2015.02.01 [grinkov]
+ * format text 
+
 2009.08.21 [shmigirilov]
  * fix typecast warnings in g++
 

@@ -1,9 +1,8 @@
 Very Simple Remote Procedure Call (VSRPC) project
-Version: 0.8 (development)
+Version: 0.8
 Licensed by BSD
 Autors: Alex Grinkov <a.grinkov@gmail.com>,
         Anton Shmigigilov <shmigirilov@gmail.com>
-Last update: 2008.03.24
 
 modules:
   vsrpc.c/vsrpc.h - VSRPC core

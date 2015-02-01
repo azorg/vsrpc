@@ -88,7 +88,7 @@ int main()
                    on_connect,
                    on_exchange,
                    on_disconnect,
-                   16, SCHED_OTHER) != 0)
+                   16, SCHED_FIFO) != 0)
     return -1;
   
   printf("\npress ENTER to push for each client\n");

@@ -2,39 +2,15 @@
  * Simple wrappers to work with UNIX-like TCP/IP sockets
  * Version: 0.11
  * File: "socklib.c"
- *
- * Copyright (c) 2005, 2006, 2007, 2008, 2009
- *   a.grinkov@gmail.com, shmigirilov@gmail.com. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the names of the copyright holders may be used to endorse
- *       or promote products derived from this software without specific prior
- *       written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY  ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDER BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Last update: 2009.08.21
+ * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
+ * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
+ * Last update: 2015.02.01
  */
 
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 #include <string.h>  // memset(), memcpy()
 #include "socklib.h"
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 #ifdef SL_WIN32 // winsock
 #  include <windows.h>
 #  include <winsock.h>
@@ -50,11 +26,11 @@
 #  include <arpa/inet.h>  // inet_aton()
 #  include <netinet/in.h> // inet_aton()
 #endif // SL_WIN32
-
+//----------------------------------------------------------------------------
 #ifdef ECOS
 #  include <network.h> // select() under eCos
 #endif // ECOS
-
+//----------------------------------------------------------------------------
 #ifndef SL_WIN32
 #  ifdef SL_USE_POLL
 #    include <sys/poll.h> // poll()
@@ -62,9 +38,9 @@
 #    include <sys/select.h> // select() [POSIX way]
 #  endif // SL_USE_POLL
 #endif // SL_WIN32
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 static int sl_initialized = 0;
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 const char *errors[] = {
   "no error",
   "initialize error",
@@ -84,20 +60,7 @@ const char *errors[] = {
   "socklib not initialized",
   "timeout",
 };
-// ---------------------------------------------------------------------------
-// returns socklib error string
-char *sl_error_str(int err)
-{
-    static const char *unknown_error = "unknown error";
-
-    err = (err < 0)?-err:err;
-
-    if (err > SL_NUM_ERRORS-1)
-        return (char *)unknown_error;
-
-    return (char *)errors[err];
-}
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 #ifdef SL_WIN32
 // emulate BSD inet_aton for win32
 static int inet_aton(const char *name, struct in_addr *addr)
@@ -110,7 +73,7 @@ static int inet_aton(const char *name, struct in_addr *addr)
   return (a != (unsigned long)-1);
 }
 #endif // SL_WIN32
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // initialize network subsystem
 int sl_init(void)
 {
@@ -119,7 +82,7 @@ int sl_init(void)
   WORD ver;
 
   if (sl_initialized)
-      return SL_ERROR_ALREADY_INIT;
+    return SL_ERROR_ALREADY_INIT;
 
   ver = 0x0202;
 
@@ -131,7 +94,7 @@ int sl_init(void)
 
   return SL_SUCCESS;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // finalize network subsystem
 void sl_term(void)
 {
@@ -140,20 +103,20 @@ void sl_term(void)
   sl_initialized = 0;
 #endif // SL_WIN32
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // get extra error code (useful for win32 WSA functions)
 int sl_get_last_error()
 {
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
 #ifdef SL_WIN32
-	return WSAGetLastError();
+  return WSAGetLastError();
 #else // SL_WIN32
-	return errno;
+  return errno;
 #endif // SL_WIN32
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // make server TCP/IP socket
 int sl_make_server_socket_ex(const char *host_ip, int port, int backlog)
 {
@@ -162,7 +125,7 @@ int sl_make_server_socket_ex(const char *host_ip, int port, int backlog)
   struct in_addr iaddr;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   // socket(...)
   sock = (int)socket(AF_INET, SOCK_STREAM, 0); // get socket
@@ -187,13 +150,13 @@ int sl_make_server_socket_ex(const char *host_ip, int port, int backlog)
 
   return sock; // return vailid server socket for "accept(...)"
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // make server TCP/IP socket (simple)
 int sl_make_server_socket(int port)
 {
   return sl_make_server_socket_ex("0.0.0.0", port, 1);
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // make client TCP/IP socket
 int sl_connect_to_server(const char *host, int port)
 {
@@ -203,7 +166,7 @@ int sl_connect_to_server(const char *host, int port)
   struct hostent  *hp;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   // socket(...)
   sock = (int) socket(AF_INET, SOCK_STREAM, 0); // get socket
@@ -234,23 +197,23 @@ int sl_connect_to_server(const char *host, int port)
 
   return sock;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // close socket
 int sl_disconnect(int fd)
 {
   int ret;
 
   if (!sl_initialized)
-     return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   ret = shutdown(fd, SHUT_RDWR);
   if (ret != 0)
-     return SL_ERROR_DISCONNECT;
+    return SL_ERROR_DISCONNECT;
 
 #ifdef SL_WIN32
   ret = closesocket(fd);
   if (ret != 0)
-     return SL_ERROR_DISCONNECT;
+    return SL_ERROR_DISCONNECT;
 
 #else // SL_WIN32
 
@@ -261,7 +224,7 @@ int sl_disconnect(int fd)
 
   return SL_SUCCESS;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // accept wrapper (return file descriptor or -1 on error)
 int sl_accept(int server_socket, unsigned *ipaddr)
 {
@@ -270,7 +233,7 @@ int sl_accept(int server_socket, unsigned *ipaddr)
   socklen_t addrlen = sizeof(struct sockaddr);
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   while (1)
   {
@@ -287,7 +250,7 @@ int sl_accept(int server_socket, unsigned *ipaddr)
     return fd; // success, client connected
   } // while(1)
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // select wraper for non block read (return 0:false, 1:true, -1:error)
 int sl_select(int fd, int msec)
 {
@@ -361,7 +324,7 @@ int sl_select(int fd, int msec)
   return 0; // empty
 #endif // !SL_USE_SELECT
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // fuse select wraper (always return 1)
 int sl_select_fuse(int fd, int msec)
 {
@@ -370,12 +333,12 @@ int sl_select_fuse(int fd, int msec)
 
   return 1;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // read wraper
 int sl_read(int fd, void *buf, int size)
 {
-    if (!sl_initialized)
-        return SL_ERROR_NOTINIT;
+  if (!sl_initialized)
+    return SL_ERROR_NOTINIT;
 
   if (size > 0)
     while (1)
@@ -394,10 +357,10 @@ int sl_read(int fd, void *buf, int size)
         return SL_ERROR_READ;
       }
       return size;
-    }
+    } // while (1)
   return 0;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // read `size` bytes from stream `fd` to `buf` at once
 int sl_read_all(int fd, void *buf, int size)
 {
@@ -405,7 +368,7 @@ int sl_read_all(int fd, void *buf, int size)
   char *ptr = (char*) buf;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   while (size > 0)
   {
@@ -430,7 +393,7 @@ int sl_read_all(int fd, void *buf, int size)
   }
   return cnt;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // read `size` bytes from stream `fd` to `buf` at once with use timeout
 int sl_read_all_to(int fd, void *buf, int size, int ms)
 {
@@ -438,7 +401,7 @@ int sl_read_all_to(int fd, void *buf, int size, int ms)
   char *ptr = (char*) buf;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   while (size > 0)
   {
@@ -474,7 +437,7 @@ int sl_read_all_to(int fd, void *buf, int size, int ms)
   }
   return cnt;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // write `size` bytes to stream `fd` from `buf` at once
 int sl_write(int fd, const void *buf, int size)
 {
@@ -482,7 +445,7 @@ int sl_write(int fd, const void *buf, int size)
   char *ptr = (char*) buf;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   while (size > 0)
   {
@@ -506,7 +469,7 @@ int sl_write(int fd, const void *buf, int size)
   }
   return cnt;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // make server UDP socket
 int sl_udp_make_server_socket(int port)
 {
@@ -514,7 +477,7 @@ int sl_udp_make_server_socket(int port)
   struct sockaddr_in saddr;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   sock = (int)socket(AF_INET, SOCK_DGRAM, 0);
   if (sock < 0)
@@ -530,14 +493,14 @@ int sl_udp_make_server_socket(int port)
 
   return sock;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // make client UDP socket
 int sl_udp_make_client_socket()
 {
   int ret;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   ret = (int)socket(AF_INET, SOCK_DGRAM, 0);
   if (ret < 0)
@@ -545,69 +508,69 @@ int sl_udp_make_client_socket()
   else
     return ret;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // read datagram from UDP socket (blocked)
 int sl_udp_read(int fd, void *buf, int size, unsigned *ipaddr)
 {
-    int ret, len;
-    struct sockaddr_in client;
+  int ret, len;
+  struct sockaddr_in client;
 
-    if (!sl_initialized)
-        return SL_ERROR_NOTINIT;
+  if (!sl_initialized)
+    return SL_ERROR_NOTINIT;
 
-    len = sizeof(client);
+  len = sizeof(client);
 
 #ifdef SL_WIN32
-    ret = recvfrom(fd, (char *)buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
+  ret = recvfrom(fd, (char *)buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
 #else // SL_WIN32
-    ret = recvfrom(fd, buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
+  ret = recvfrom(fd, buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
 #endif // SL_WIN32
 
-    if (ret < 0)
-    {
-        *ipaddr = (unsigned)-1;
-        return SL_ERROR_READ;
-    }
+  if (ret < 0)
+  {
+    *ipaddr = (unsigned)-1;
+    return SL_ERROR_READ;
+  }
 
-    *ipaddr = (unsigned) (((struct sockaddr_in *)&client)->sin_addr.s_addr);
+  *ipaddr = (unsigned) (((struct sockaddr_in *)&client)->sin_addr.s_addr);
 
-    return ret;
+  return ret;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // read datagram from UDP socket (timeout)
 int sl_udp_read_to(int fd, void *buf, int size, unsigned *ipaddr, int ms)
 {
-    int ret, len;
-    struct sockaddr_in client;
+  int ret, len;
+  struct sockaddr_in client;
 
-    if (!sl_initialized)
-        return SL_ERROR_NOTINIT;
+  if (!sl_initialized)
+    return SL_ERROR_NOTINIT;
 
-    ret = sl_select(fd, ms);
-    if (ret < 0)
-        return SL_ERROR_SELECT;
-    else if (ret == 0)
-        return SL_TIMEOUT;
+  ret = sl_select(fd, ms);
+  if (ret < 0)
+    return SL_ERROR_SELECT;
+  else if (ret == 0)
+    return SL_TIMEOUT;
 
-    len = sizeof(client);
+  len = sizeof(client);
 
 #ifdef SL_WIN32
-    ret = recvfrom(fd, (char *)buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
+  ret = recvfrom(fd, (char *)buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
 #else // SL_WIN32
-    ret = recvfrom(fd, buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
+  ret = recvfrom(fd, buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
 #endif // SL_WIN32
 
-    if (ret < 0)
-    {
-        *ipaddr = (unsigned)-1;
-        return SL_ERROR_READ;
-    }
+  if (ret < 0)
+  {
+    *ipaddr = (unsigned)-1;
+    return SL_ERROR_READ;
+  }
 
-    *ipaddr = (unsigned) (((struct sockaddr_in *)&client)->sin_addr.s_addr);
+  *ipaddr = (unsigned) (((struct sockaddr_in *)&client)->sin_addr.s_addr);
 
-    return ret;
+  return ret;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // send datagram to peer via UDP to ip
 int sl_udp_sendto(int fd, unsigned ipaddr, int port, const void *buf, int size)
 {
@@ -615,7 +578,7 @@ int sl_udp_sendto(int fd, unsigned ipaddr, int port, const void *buf, int size)
   int ret;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
 
   memset(&to_addr, 0, sizeof(to_addr));
 
@@ -629,11 +592,11 @@ int sl_udp_sendto(int fd, unsigned ipaddr, int port, const void *buf, int size)
   ret = sendto(fd, buf, size, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
 #endif // SL_WIN32
   if (ret < 0)
-      return SL_ERROR_WRITE;
+    return SL_ERROR_WRITE;
 
   return ret;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // send datagram to peer via UDP to host
 int sl_udp_sendto_addr(int fd, const char *host, int port, const void *buf, int size)
 {
@@ -642,9 +605,10 @@ int sl_udp_sendto_addr(int fd, const char *host, int port, const void *buf, int 
   unsigned ip_addr;
 
   if (!sl_initialized)
-      return SL_ERROR_NOTINIT;
+    return SL_ERROR_NOTINIT;
+
   ip_addr = inet_addr(host);
-  if(ip_addr == INADDR_NONE)
+  if (ip_addr == INADDR_NONE)
     return SL_ERROR_RESOLVE;  
 
   memset(&to_addr, 0, sizeof(to_addr));
@@ -659,11 +623,11 @@ int sl_udp_sendto_addr(int fd, const char *host, int port, const void *buf, int 
   ret = sendto(fd, buf, size, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
 #endif // SL_WIN32
   if (ret < 0)
-      return SL_ERROR_WRITE;
+    return SL_ERROR_WRITE;
 
   return ret;
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // convert dotted ipaddr to numeric
 unsigned sl_inet_aton(const char *s)
 {
@@ -672,7 +636,7 @@ unsigned sl_inet_aton(const char *s)
   inet_aton(s, &iaddr);
   return (unsigned)(iaddr.s_addr);
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 // convert numeric ipaddr to dotted
 const char *sl_inet_ntoa(unsigned ipaddr)
 {
@@ -680,25 +644,39 @@ const char *sl_inet_ntoa(unsigned ipaddr)
   iaddr.s_addr = ipaddr;
   return (const char *)inet_ntoa(iaddr);
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 unsigned sl_htonl(unsigned hostlong)
 {
   return htonl(hostlong);
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 unsigned short sl_htons(unsigned short hostshort)
 {
   return htons(hostshort);
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 unsigned sl_ntohl(unsigned netlong)
 {
   return htonl(netlong);
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 unsigned short sl_ntohs(unsigned short netshort)
 {
   return htons(netshort);
 }
-// ---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// returns socklib error string
+const char *sl_error_str(int err)
+{
+  static const char *unknown_error = "unknown error";
+
+  err = (err < 0)?-err:err;
+
+  if (err > SL_NUM_ERRORS-1)
+    return (char *)unknown_error;
+
+  return (char *)errors[err];
+}
+//----------------------------------------------------------------------------
 /*** end of "socklib.c" file ***/
+

@@ -7,6 +7,8 @@ This is the ChangeLog of Very Simple Remote Procedure Call Project (VSRPC)
  * back files from old backup, fix some bugs and commit in Git
  * test under Windows 8.1 (MinGW32), fix and update
  * update vsfifo (use vsthread)
+ * format text
+ * edit BSD license (COPYING)
 
 <-- *** -->
 

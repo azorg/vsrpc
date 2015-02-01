@@ -40,6 +40,12 @@ int main()
   double t1, t2;
   int i, j, k, id, size, err;
 
+#ifdef VSWIN32
+  int priority = 16;
+#else
+  int priority = 10;
+#endif
+
   sl_init();
 
   printf("\n\npress ENTER to start\n");
@@ -47,7 +53,7 @@ int main()
   
   printf("vstcpc_start()\n");
   if ((i = vstcpc_start(&obj, NULL, NULL, VSRPC_PERM_DEFAULT, HOST, PORT,
-                        16, SCHED_OTHER)) != 0)
+                        priority, SCHED_FIFO)) != 0)
   {
     fprintf(stderr, "vstcpc_start() return %i\n", i);
     return -1;
