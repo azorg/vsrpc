@@ -1,10 +1,10 @@
 /*
  * Simple wrappers to work with UNIX-like TCP/IP sockets
- * Version: 0.11
+ * Version: 0.12
  * File: "socklib.c"
  * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
  * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
- * Last update: 2015.02.01
+ * Last update: 2015.02.02
  */
 
 //----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ static int inet_aton(const char *name, struct in_addr *addr)
   a = inet_addr (name);
   addr->s_addr = a;
 
-  return (a != (unsigned long)-1);
+  return (a != (unsigned long) - 1);
 }
 #endif // SL_WIN32
 //----------------------------------------------------------------------------
@@ -118,12 +118,12 @@ const char *sl_error_str(int err)
 int sl_get_last_error()
 {
   if (!sl_initialized)
-    return SL_ERROR_NOTINIT;
+    return 0;
 
 #ifdef SL_WIN32
   return WSAGetLastError();
 #else // SL_WIN32
-  return errno; // FIXME (bad code)
+  return errno;
 #endif // SL_WIN32
 }
 //----------------------------------------------------------------------------
@@ -143,7 +143,8 @@ int sl_make_server_socket_ex(const char *host_ip, int port, int backlog)
     return SL_ERROR_SOCKET;
 
   // bind(...)
-  memset((void*) &saddr, (int) 0, (size_t) sizeof(saddr)); // clear address of socket
+  memset((void*) &saddr, (int) 0, (size_t) sizeof(saddr)); // clear address
+  
   if (inet_aton(host_ip, &iaddr) == 0)
     return SL_ERROR_ADDR;
   
@@ -184,7 +185,7 @@ int sl_connect_to_server(const char *host, int port)
     return SL_ERROR_SOCKET;
 
   // connect(...)
-  memset((void*) &saddr, (int) 0, (size_t) sizeof(saddr)); // clear address of socket
+  memset((void*) &saddr, (int) 0, (size_t) sizeof(saddr)); // clear address
   hp = gethostbyname(host);
   if (hp == NULL)
   {
@@ -197,7 +198,8 @@ int sl_connect_to_server(const char *host, int port)
   }
   else
   {
-    memcpy((void*) &saddr.sin_addr, (const void*) hp->h_addr, (size_t) hp->h_length);
+    memcpy((void*) &saddr.sin_addr,
+           (const void*) hp->h_addr, (size_t) hp->h_length);
   }
   saddr.sin_port = htons( (unsigned short)port );
   saddr.sin_family = AF_INET;
@@ -256,6 +258,7 @@ int sl_accept(int server_socket, unsigned *ipaddr)
 #endif // SL_WIN32
       return SL_ERROR_ACCEPT; // error
     }
+
     *ipaddr = (unsigned) (((struct sockaddr_in *)&addr)->sin_addr.s_addr);
     return fd; // success, client connected
   } // while(1)
@@ -340,7 +343,6 @@ int sl_select_fuse(int fd, int msec)
 {
   fd = fd;
   msec = msec;
-
   return 1;
 }
 //----------------------------------------------------------------------------
@@ -354,7 +356,7 @@ int sl_read(int fd, void *buf, int size)
     while (1)
     {
 #ifdef SL_WIN32
-      size = recv(fd, (char *)buf, size, 0);
+      size = recv(fd, (char*) buf, size, 0);
 #else // SL_WIN32
       size = read(fd, buf, (size_t) size);
 #endif  // SL_WIN32
@@ -460,7 +462,7 @@ int sl_write(int fd, const void *buf, int size)
   while (size > 0)
   {
 #ifdef SL_WIN32
-    retv = send(fd, (const char *) ptr, size, 0);
+    retv = send(fd, (const char*) ptr, size, 0);
 #else // SL_WIN32
     retv = write(fd, (void*) ptr, size);
 #endif // SL_WIN32
@@ -489,16 +491,18 @@ int sl_udp_make_server_socket(int port)
   if (!sl_initialized)
     return SL_ERROR_NOTINIT;
 
-  sock = (int)socket(AF_INET, SOCK_DGRAM, 0);
+  // socket(...)
+  sock = (int) socket(AF_INET, SOCK_DGRAM, 0);
   if (sock < 0)
     return SL_ERROR_SOCKET;
 
+  // bind(...)
   memset(&saddr, 0, sizeof(saddr));
   saddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  saddr.sin_port = htons( (unsigned short)port );
+  saddr.sin_port = htons( (unsigned short) port);
   saddr.sin_family = AF_INET;
 
-  if (bind(sock, (struct sockaddr *) &saddr, sizeof(saddr)) < 0)
+  if (bind(sock, (struct sockaddr*) &saddr, sizeof(saddr)) < 0)
     return SL_ERROR_BIND;
 
   return sock;
@@ -512,7 +516,8 @@ int sl_udp_make_client_socket()
   if (!sl_initialized)
     return SL_ERROR_NOTINIT;
 
-  ret = (int)socket(AF_INET, SOCK_DGRAM, 0);
+  // socket(...)
+  ret = (int) socket(AF_INET, SOCK_DGRAM, 0);
   if (ret < 0)
     return SL_ERROR_SOCKET;
   else
@@ -531,18 +536,20 @@ int sl_udp_read(int fd, void *buf, int size, unsigned *ipaddr)
   len = sizeof(client);
 
 #ifdef SL_WIN32
-  ret = recvfrom(fd, (char *)buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
+  ret = recvfrom(fd, (char*) buf, size, 0,
+                 (struct sockaddr*) &client, (socklen_t*) &len);
 #else // SL_WIN32
-  ret = recvfrom(fd, buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
+  ret = recvfrom(fd, buf, size, 0,
+                 (struct sockaddr*) &client, (socklen_ti*) &len);
 #endif // SL_WIN32
 
   if (ret < 0)
   {
-    *ipaddr = (unsigned)-1;
+    *ipaddr = (unsigned) - 1;
     return SL_ERROR_READ;
   }
 
-  *ipaddr = (unsigned) (((struct sockaddr_in *)&client)->sin_addr.s_addr);
+  *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
 
   return ret;
 }
@@ -565,24 +572,27 @@ int sl_udp_read_to(int fd, void *buf, int size, unsigned *ipaddr, int ms)
   len = sizeof(client);
 
 #ifdef SL_WIN32
-  ret = recvfrom(fd, (char *)buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
+  ret = recvfrom(fd, (char*) buf, size, 0,
+                 (struct sockaddr*) &client, (socklen_t*) &len);
 #else // SL_WIN32
-  ret = recvfrom(fd, buf, size, 0, (struct sockaddr *)&client, (socklen_t *)&len);
+  ret = recvfrom(fd, buf, size, 0,
+                 (struct sockaddr*) &client, (socklen_t*) &len);
 #endif // SL_WIN32
 
   if (ret < 0)
   {
-    *ipaddr = (unsigned)-1;
+    *ipaddr = (unsigned) - 1;
     return SL_ERROR_READ;
   }
 
-  *ipaddr = (unsigned) (((struct sockaddr_in *)&client)->sin_addr.s_addr);
+  *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
 
   return ret;
 }
 //----------------------------------------------------------------------------
 // send datagram to peer via UDP to ip
-int sl_udp_sendto(int fd, unsigned ipaddr, int port, const void *buf, int size)
+int sl_udp_sendto(int fd, unsigned ipaddr, int port,
+                  const void *buf, int size)
 {
   struct sockaddr_in to_addr;
   int ret;
@@ -597,10 +607,13 @@ int sl_udp_sendto(int fd, unsigned ipaddr, int port, const void *buf, int size)
   to_addr.sin_addr.s_addr = ipaddr;
 
 #ifdef SL_WIN32
-  ret = sendto(fd, (const char *)buf, size, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
+  ret = sendto(fd, (const char*) buf, size, 0,
+               (struct sockaddr*) &to_addr, sizeof(to_addr));
 #else // SL_WIN32
-  ret = sendto(fd, buf, size, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
+  ret = sendto(fd, buf, size, 0,
+               (struct sockaddr*) &to_addr, sizeof(to_addr));
 #endif // SL_WIN32
+
   if (ret < 0)
     return SL_ERROR_WRITE;
 
@@ -608,7 +621,8 @@ int sl_udp_sendto(int fd, unsigned ipaddr, int port, const void *buf, int size)
 }
 //----------------------------------------------------------------------------
 // send datagram to peer via UDP to host
-int sl_udp_sendto_addr(int fd, const char *host, int port, const void *buf, int size)
+int sl_udp_sendto_addr(int fd, const char *host, int port,
+                       const void *buf, int size)
 {
   int ret;
   struct sockaddr_in to_addr;
@@ -628,10 +642,13 @@ int sl_udp_sendto_addr(int fd, const char *host, int port, const void *buf, int 
   to_addr.sin_addr.s_addr = inet_addr(host);
 
 #ifdef SL_WIN32
-  ret = sendto(fd, (const char *)buf, size, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
+  ret = sendto(fd, (const char*) buf, size, 0,
+               (struct sockaddr*) &to_addr, sizeof(to_addr));
 #else // SL_WIN32
-  ret = sendto(fd, buf, size, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
+  ret = sendto(fd, buf, size, 0,
+               (struct sockaddr*) &to_addr, sizeof(to_addr));
 #endif // SL_WIN32
+
   if (ret < 0)
     return SL_ERROR_WRITE;
 
@@ -642,9 +659,9 @@ int sl_udp_sendto_addr(int fd, const char *host, int port, const void *buf, int 
 unsigned sl_inet_aton(const char *s)
 {
   struct in_addr iaddr;
-  memset((void *)&iaddr, 0, sizeof(iaddr));
+  memset((void*) &iaddr, 0, sizeof(iaddr));
   inet_aton(s, &iaddr);
-  return (unsigned)(iaddr.s_addr);
+  return (unsigned) (iaddr.s_addr);
 }
 //----------------------------------------------------------------------------
 // convert numeric ipaddr to dotted
@@ -652,7 +669,7 @@ const char *sl_inet_ntoa(unsigned ipaddr)
 {
   struct in_addr iaddr;
   iaddr.s_addr = ipaddr;
-  return (const char *)inet_ntoa(iaddr);
+  return (const char*) inet_ntoa(iaddr);
 }
 //----------------------------------------------------------------------------
 unsigned sl_htonl(unsigned hostlong)

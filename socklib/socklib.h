@@ -1,10 +1,10 @@
 /*
  * Simple wrappers to work with UNIX-like TCP/IP sockets
- * Version: 0.11
- * File: "socklib.h"
+ * Version: 0.12
+  File: "socklib.h"
  * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
  * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
- * Last update: 2015.02.01
+ * Last update: 2015.02.02
  */
 
 #ifndef SOCKLIB_H
@@ -40,7 +40,7 @@ extern "C" {
 //----------------------------------------------------------------------------
 // missing const
 #ifdef SL_WIN32
-# define SHUT_RDWR 2
+#  define SHUT_RDWR 2
 #endif // SL_WIN32
 //----------------------------------------------------------------------------
 // error codes
@@ -122,10 +122,12 @@ int sl_udp_read(int fd, void *buf, int size, unsigned *ipaddr);
 int sl_udp_read_to(int fd, void *buf, int size, unsigned *ipaddr, int ms);
 //----------------------------------------------------------------------------
 // send datagram to peer via UDP to ip numeric
-int sl_udp_sendto(int fd, unsigned ipaddr, int port, const void *buf, int size);
+int sl_udp_sendto(int fd, unsigned ipaddr, int port,
+                  const void *buf, int size);
 //----------------------------------------------------------------------------
 // send datagram to peer via UDP to ip char*
-int sl_udp_sendto_addr(int fd, const char *host, int port, const void *buf, int size);
+int sl_udp_sendto_addr(int fd, const char *host, int port,
+                       const void *buf, int size);
 //----------------------------------------------------------------------------
 // convert dotted ipaddr to numeric
 unsigned sl_inet_aton(const char *s);
