@@ -62,7 +62,7 @@ void on_connect(
   }
   sl_write(fd, (const void*) msg2, strlen(msg2));
   
-  printf("on_exchange() finish\n");
+  printf("on_connect() finish\n");
 }
 //----------------------------------------------------------------------------
 // on disconnect callback function
