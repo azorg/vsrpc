@@ -76,7 +76,7 @@
 // used in vsrpc_run_forever() and vsrpc_wait() functions
 #define VSRPC_SELECT_TIMEOUT (-1)
 
-// common error codes
+// common error codes (return values)
 #define VSRPC_ERR_NONE    0 // no error all success
 #define VSRPC_ERR_RET    -1 // 1 function complete and return
 #define VSRPC_ERR_FNF    -2 // function not found
@@ -92,6 +92,7 @@
 #define VSRPC_ERR_PROT  -12 // error of protocol
 #define VSRPC_ERR_BARG  -13 // bad argument
 #define VSRPC_ERR_EXIT  -14 // client call "exit" => goodbye
+#define VSRPC_NUM_ERRORS 15
 
 // permissions flags
 #define VSRPC_PERM_READ   (1<<0) // read memory from server
@@ -194,6 +195,9 @@ VSRPC_INLINE void vsrpc_free(char *ptr)
 { 
   free((void*) ptr); 
 }
+//----------------------------------------------------------------------------
+// return VSRPC error string
+const char *vsrpc_error_str(int err);
 //----------------------------------------------------------------------------
 // reallocate memory (return NULL on failure)
 //char *vsrpc_realloc(char *old, int old_size, int new_size); 

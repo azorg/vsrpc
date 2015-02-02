@@ -11,8 +11,11 @@
 #include "vsrpc.h"
 #include "vstcps.h"
 //----------------------------------------------------------------------------
-// select default timeout [ms]
-#define VSTCPD_SELECT_TIMEOUT (-1)
+// select default timeout [ms] (-1 : infinite)
+#ifndef VSTCPD_SELECT_TIMEOUT
+#  define VSTCPD_SELECT_TIMEOUT -1
+//#  define VSTCPD_SELECT_TIMEOUT 1000
+#endif
 //----------------------------------------------------------------------------
 // include debuging output
 //#define VSTCPD_DEBUG

@@ -26,6 +26,25 @@ static vsrpc_func_t vsrpc_builtin_functions[] = {
   { "perm",    vsrpc_builtin_perm    }, // get permissions
   { NULL, NULL }
 };
+//----------------------------------------------------------------------------
+const char *vsrpc_errors[] = {
+  "all success",
+  "function complete and return",
+  "function not found",
+  "permission denied",
+  "end of pipe (disconnect)",
+  "empty pipe (no data in pipe)",
+  "input buffer too big",
+  "memory error (malloc return NULL)",
+  "no free memory block",
+  "try to allocate too big memory block",
+  "can't call more the one function",
+  "procedure not run yet",
+  "error of protocol",
+  "bad argument",
+  "client call 'exit'",
+};
+static const char *vsrpc_error_unknown = "unknown error";
 //============================================================================
 /*
 // reallocate memory (return NULL on failure)
@@ -45,6 +64,15 @@ char *vsrpc_realloc(char *old, int old_size, int new_size)
   return new;
 }
 */
+//----------------------------------------------------------------------------
+// return VSRPC error string
+const char *vsrpc_error_str(int err)
+{
+  err = -err;
+  return (err >= 0 && err < VSRPC_NUM_ERRORS) ?
+         (char*) vsrpc_errors[err] :
+         (char*) vsrpc_error_unknown;
+}
 //----------------------------------------------------------------------------
 // init function
 int vsrpc_init(

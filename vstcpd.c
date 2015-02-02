@@ -40,10 +40,12 @@ static int vstcpd_on_accept(
 
   if (ps->on_accept != NULL)
   {
+    VSTCPD_DBG("ps->on_accept() start");
     retv = ps->on_accept(fd, ipaddr, &pc->context, ps->context, count);
+    VSTCPD_DBG("ps->on_accept() finish and return %i", retv);
     if (retv != 0)
     { // reject
-      VSTCPD_DBG("on_accept() return %i, reject connection", retv);
+      VSTCPD_DBG("on_accept() return %i != 0, reject connection", retv);
       vsmutex_destroy(&pc->mtx_fd);
       free(pc);
     }
@@ -85,36 +87,50 @@ static void vstcpd_on_connect(
   if (retv != VSRPC_ERR_NONE)
   {
     VSTCPD_DBG("Ooops; can't init VSRPC: vsrpc_init() return %i)", retv);
-    VSTCPD_DBG("vstcpd_on_connect(IP=%s) finish",
-                sl_inet_ntoa(pc->ipaddr));
+    VSTCPD_DBG("vstcpd_on_connect() finish");
     return;
   }
   
   while (1)
   {
     // wait request from client side
-    while ((retv = sl_select(fd, VSTCPD_SELECT_TIMEOUT)) == 0);
-    vsmutex_lock(&pc->mtx_fd);
+    VSTCPD_DBG("run cycle: 'while ((sl_select(fd=%i, timeout=%i) == 0);'",
+               fd, VSTCPD_SELECT_TIMEOUT);
 
-    if (retv < 0) break; // close connection
+    while ((retv = sl_select(fd, VSTCPD_SELECT_TIMEOUT)) == 0)
+    {
+      VSTCPD_DBG("sl_select(fd=%i, timeout=%i) return 0 (false)",
+                 fd, VSTCPD_SELECT_TIMEOUT);
+    }
+    
+    VSTCPD_DBG("sl_select(fd=%i, timeout=%i) return %i ('%s')",
+               fd, VSTCPD_SELECT_TIMEOUT, retv,
+               retv < 0 ? sl_error_str(retv) : (retv ? "true" : "false"));
+
+    vsmutex_lock(&pc->mtx_fd);
+    
+    if (retv < 0)
+       break; // close connection
     
     // allow run 1 procedure on server
     retv = vsrpc_run(&pc->rpc);
     
+    VSTCPD_DBG("vsrpc_run() return %i ('%s')", retv, vsrpc_error_str(retv));
+    
     // check VSRPC return value
     if (retv != VSRPC_ERR_EMPTY &&
-        retv != VSRPC_ERR_NONE &&
-        retv != VSRPC_ERR_RET &&
+        retv != VSRPC_ERR_NONE  &&
+        retv != VSRPC_ERR_RET   &&
         retv != VSRPC_ERR_FNF) break; // close connection
   
     vsmutex_unlock(&pc->mtx_fd);
   } // while (1)
+
   vsmutex_unlock(&pc->mtx_fd);
 
   vsrpc_release(&pc->rpc); // stop VSRPC
   
-  VSTCPD_DBG("vstcpd_on_connect(IP=%s) finish",
-              sl_inet_ntoa(pc->ipaddr));
+  VSTCPD_DBG("vstcpd_on_connect() finish");
 }
 //----------------------------------------------------------------------------
 // on disconnect callback function
@@ -128,8 +144,12 @@ static void vstcpd_on_disconnect(
 
   // disconnect
   if (ps->on_disconnect != NULL)
+  {
+    VSTCPS_DBG("pc->on_disconnect() start");
     ps->on_disconnect(pc->context);
-  
+    VSTCPS_DBG("pc->on_disconnect() finish");
+  }
+
   vsmutex_destroy(&pc->mtx_fd);
   free(pc);
 

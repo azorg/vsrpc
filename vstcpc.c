@@ -79,7 +79,7 @@ int vstcpc_start(
 
   if (retv < 0)
   {
-    VSTCPC_DBG("Ooops; sl_connect_to_server() return %i (%s)",
+    VSTCPC_DBG("Ooops; sl_connect_to_server() return %i ('%s')",
                retv, sl_error_str(retv));
     VSTCPC_DBG("Can't connect to TCP/IP server %s:%i", host, port);
     return -1;

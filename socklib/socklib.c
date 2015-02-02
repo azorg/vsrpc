@@ -41,7 +41,7 @@
 //----------------------------------------------------------------------------
 static int sl_initialized = 0;
 //----------------------------------------------------------------------------
-const char *errors[] = {
+static const char *sl_errors[] = {
   "no error",
   "initialize error",
   "socket() error",
@@ -60,6 +60,7 @@ const char *errors[] = {
   "socklib not initialized",
   "timeout",
 };
+static const char *sl_error_unknown = "unknown error";
 //----------------------------------------------------------------------------
 #ifdef SL_WIN32
 // emulate BSD inet_aton for win32
@@ -104,7 +105,16 @@ void sl_term(void)
 #endif // SL_WIN32
 }
 //----------------------------------------------------------------------------
-// get extra error code (useful for win32 WSA functions)
+// return socklib error string
+const char *sl_error_str(int err)
+{
+  err = -err;
+  return (err >= 0 && err < SL_NUM_ERRORS) ?
+         (char*) sl_errors[err] :
+         (char*) sl_error_unknown;
+}
+//----------------------------------------------------------------------------
+// get extra error code (useful for win32 WSA functions ONLY)
 int sl_get_last_error()
 {
   if (!sl_initialized)
@@ -113,7 +123,7 @@ int sl_get_last_error()
 #ifdef SL_WIN32
   return WSAGetLastError();
 #else // SL_WIN32
-  return errno;
+  return errno; // FIXME (bad code)
 #endif // SL_WIN32
 }
 //----------------------------------------------------------------------------
@@ -251,7 +261,7 @@ int sl_accept(int server_socket, unsigned *ipaddr)
   } // while(1)
 }
 //----------------------------------------------------------------------------
-// select wraper for non block read (return 0:false, 1:true, -1:error)
+// select wraper for non block read (return 0:false, 1:true, < 0:error code)
 int sl_select(int fd, int msec)
 {
 #ifdef SL_USE_POLL
@@ -663,19 +673,6 @@ unsigned sl_ntohl(unsigned netlong)
 unsigned short sl_ntohs(unsigned short netshort)
 {
   return htons(netshort);
-}
-//----------------------------------------------------------------------------
-// returns socklib error string
-const char *sl_error_str(int err)
-{
-  static const char *unknown_error = "unknown error";
-
-  err = (err < 0)?-err:err;
-
-  if (err > SL_NUM_ERRORS-1)
-    return (char *)unknown_error;
-
-  return (char *)errors[err];
 }
 //----------------------------------------------------------------------------
 /*** end of "socklib.c" file ***/

@@ -23,6 +23,7 @@ static void *vstcps_on_connect_thread(void *arg)
   
   if (server->on_connect != NULL)
   {
+    VSTCPS_DBG("server->on_connect() start");
     server->on_connect(client->fd, client->ipaddr, 
                        client->context, server->context);
     VSTCPS_DBG("server->on_connect() finish");
@@ -49,11 +50,15 @@ static void *vstcps_on_connect_thread(void *arg)
   }
 
   if (server->on_disconnect != NULL)
+  {
+    VSTCPS_DBG("server->on_disconnect() start");
     server->on_disconnect(client->context);
+    VSTCPS_DBG("server->on_disconnect() finish");
+  }
   
   sl_disconnect(client->fd);
 
-  VSTCPS_DBG("client disconnected: IP=%s, count=%d",
+  VSTCPS_DBG("Client disconnected: IP=%s, count=%d",
              sl_inet_ntoa(client->ipaddr), server->count);
   
   free((void*) client); // free memory
@@ -81,9 +86,11 @@ static void *vstcps_listen_port_thread(void *arg)
     vsmutex_lock(&server->mtx_list);
     if (fd < 0)
     {
-      VSTCPS_DBG("Ooops; sl_accept() return %i < 0", fd);
+      VSTCPS_DBG("Ooops; sl_accept(IP=%s) return %i<0 ('%s')",
+               sl_inet_ntoa(ipaddr), fd, sl_error_str(fd));
       break;
     }
+    VSTCPS_DBG("sl_accept(IP=%s) return %i", sl_inet_ntoa(ipaddr), fd);
 
     // check connections number
     if (server->count >= server->max_clients)
@@ -101,6 +108,7 @@ static void *vstcps_listen_port_thread(void *arg)
     if (client == NULL)
     {
       VSTCPS_DBG("Ooops; malloc() return NULL");
+      sl_disconnect(fd);
       break;
     }
 
@@ -129,6 +137,7 @@ static void *vstcps_listen_port_thread(void *arg)
 
     if (server->on_accept != NULL)
     {
+      VSTCPS_DBG("server->on_accept() start");
       retv = server->on_accept(fd, ipaddr, &client->context, server->context,
                                server->count);
       VSTCPS_DBG("server->on_accept() finish and return %i", retv);
@@ -227,7 +236,7 @@ int vstcps_start(
   retv = sl_make_server_socket_ex(host, port, max_clients);
   if (retv < 0)
   {
-    VSTCPS_DBG("Ooops; can't create server socket %s:%i (%s)",
+    VSTCPS_DBG("Ooops; can't create server socket %s:%i ('%s')",
                host, port, sl_error_str(retv));
     return VSTCPS_ERR_SOCKET;
   }
@@ -237,6 +246,7 @@ int vstcps_start(
   if (vsmutex_init(&server->mtx_list) < 0)
   {
     VSTCPS_DBG("Ooops; can't init mutex");
+    sl_disconnect(server->sock);
     return VSTCPS_ERR_MUTEX;
   }
 
@@ -244,6 +254,8 @@ int vstcps_start(
   if (vssem_init(&server->sem_zero, 0, 1) < 0)
   {
     VSTCPS_DBG("Ooops; can't init semaphore");
+    vsmutex_destroy(&server->mtx_list);
+    sl_disconnect(server->sock);
     return VSTCPS_ERR_SEM;
   }
 
@@ -252,6 +264,9 @@ int vstcps_start(
       priority, sched) != 0)
   {
     VSTCPS_DBG("Ooops; can't create pool of threads");
+    vssem_destroy(&server->sem_zero);
+    vsmutex_destroy(&server->mtx_list);
+    sl_disconnect(server->sock);
     return VSTCPS_ERR_POOL;
   }
 #endif // VSTHREAD_POOL
@@ -267,6 +282,12 @@ int vstcps_start(
   if (retv != 0)
   {
     VSTCPS_DBG("Ooops; can't create thread");
+#ifdef VSTHREAD_POOL
+    vsthread_pool_destroy(&server->pool);
+#endif // VSTHREAD_POOL
+    vssem_destroy(&server->sem_zero);
+    vsmutex_destroy(&server->mtx_list);
+    sl_disconnect(server->sock);
     return VSTCPS_ERR_THREAD;
   }
 
@@ -310,7 +331,7 @@ void vstcps_stop(vstcps_t *server)
   vsthread_pool_destroy(&server->pool);
 #endif // VSTHREAD_POOL
 
-  // destroy semaphores
+  // destroy semaphore and mutex
   vssem_destroy(&server->sem_zero);
   vsmutex_destroy(&server->mtx_list);
 }

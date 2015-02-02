@@ -249,8 +249,8 @@ int vsthread_cancel(vsthread_pool_t *pool, vsthread_t thread)
       // set stack
 #if defined(VSTHREAD_LINUX) || defined(VSTHREAD_LINUX_RT)
       pthread_attr_setstack(&attr,
-			    (void*) &p->stack[0],
-			    VSTHREAD_STACKSIZE);
+                            (void*) &p->stack[0],
+                            VSTHREAD_STACKSIZE);
 #endif // VSTHREAD_LINUX || VSTHREAD_LINUX_RT
 
 #ifdef VSTHREAD_ECOS

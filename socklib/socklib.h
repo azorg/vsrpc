@@ -70,7 +70,10 @@ int sl_init(void);
 // finalize network subsystem
 void sl_term(void);
 //----------------------------------------------------------------------------
-// get extra error code (useful for win32 WSA functions)
+// return socklib error string
+const char *sl_error_str(int err);
+//----------------------------------------------------------------------------
+// get extra error code (useful for win32 WSA functions ONLY)
 int sl_get_last_error();
 //----------------------------------------------------------------------------
 // make server TCP socket
@@ -88,7 +91,7 @@ int sl_disconnect(int fd);
 // accept wrapper (return file descriptor or -1 on error)
 int sl_accept(int server_socket, unsigned *ipaddr);
 //----------------------------------------------------------------------------
-// select wraper for non block read (return 0:false, 1:true, -1:error)
+// select wraper for non block read (return 0:false, 1:true, < 0:error code)
 int sl_select(int fd, int msec);
 //----------------------------------------------------------------------------
 // fuse select wraper (always return 1)
@@ -135,9 +138,6 @@ unsigned sl_htonl(unsigned hostlong);
 unsigned short sl_htons(unsigned short hostshort);
 unsigned sl_ntohl(unsigned netlong);
 unsigned short sl_ntohs(unsigned short netshort);
-//----------------------------------------------------------------------------
-// returns socklib error string
-const char *sl_error_str(int err);
 //----------------------------------------------------------------------------
 #ifdef __cplusplus
 }
