@@ -1,0 +1,12 @@
+% int atoi(char*);
+i atoi s
+
+% void test(int);
+v test i
+
+% void cap(void);
+v cap
+
+% void loop(void); // loop forever
+v loop
+

@@ -58,7 +58,7 @@ static void *vstcps_on_connect_thread(void *arg)
   
   sl_disconnect(client->fd);
 
-  VSTCPS_DBG("Client disconnected: IP=%s, count=%d",
+  VSTCPS_DBG("client disconnected: IP=%s, count=%d",
              sl_inet_ntoa(client->ipaddr), server->count);
   
   free((void*) client); // free memory
@@ -86,7 +86,8 @@ static void *vstcps_listen_port_thread(void *arg)
     vsmutex_lock(&server->mtx_list);
     if (fd < 0)
     {
-      VSTCPS_DBG("Ooops; sl_accept(IP=%s) return %i<0 ('%s')",
+      VSTCPS_DBG("ooops; sl_accept(IP=%s) return %i<0: '%s'",
+
                sl_inet_ntoa(ipaddr), fd, sl_error_str(fd));
       break;
     }
@@ -95,7 +96,7 @@ static void *vstcps_listen_port_thread(void *arg)
     // check connections number
     if (server->count >= server->max_clients)
     { // too many connections - disconnect
-      VSTCPS_DBG("Connection rejected (count=%i >= max_clients=%i)",
+      VSTCPS_DBG("connection rejected (count=%i >= max_clients=%i)",
                  server->count, server->max_clients);
       vsmutex_unlock(&server->mtx_list);
       sl_disconnect(fd);
@@ -107,7 +108,7 @@ static void *vstcps_listen_port_thread(void *arg)
     client = (vstcps_client_t*) malloc(sizeof(vstcps_client_t));
     if (client == NULL)
     {
-      VSTCPS_DBG("Ooops; malloc() return NULL");
+      VSTCPS_DBG("ooops; malloc() return NULL");
       sl_disconnect(fd);
       break;
     }
@@ -144,7 +145,7 @@ static void *vstcps_listen_port_thread(void *arg)
 
       if (retv != 0)
       { // disconnect
-        VSTCPS_DBG("Connection rejected by on_accept()");
+        VSTCPS_DBG("connection rejected by on_accept()");
 
         if (--server->count == 0)
         {
@@ -180,7 +181,7 @@ static void *vstcps_listen_port_thread(void *arg)
       &client->thread, vstcps_on_connect_thread, (void*) client);
     if (retv != 0)
     {
-      VSTCPS_DBG("Ooops; can't create thread");
+      VSTCPS_DBG("ooops; can't create thread");
       break;
     }
 
@@ -222,6 +223,9 @@ int vstcps_start(
 {
   int retv;
 
+  VSTCPS_DBG("vstcps_start(host=%s, port=%i, max_clients=%i) start",
+             host, port, max_clients);
+
   // set counter of clients to zero
   // and init server structure
   server->count = 0;
@@ -236,7 +240,7 @@ int vstcps_start(
   retv = sl_make_server_socket_ex(host, port, max_clients);
   if (retv < 0)
   {
-    VSTCPS_DBG("Ooops; can't create server socket %s:%i ('%s')",
+    VSTCPS_DBG("ooops; can't create server socket %s:%i : '%s'",
                host, port, sl_error_str(retv));
     return VSTCPS_ERR_SOCKET;
   }
@@ -245,7 +249,7 @@ int vstcps_start(
   // create mutex
   if (vsmutex_init(&server->mtx_list) < 0)
   {
-    VSTCPS_DBG("Ooops; can't init mutex");
+    VSTCPS_DBG("ooops; can't init mutex");
     sl_disconnect(server->sock);
     return VSTCPS_ERR_MUTEX;
   }
@@ -253,7 +257,7 @@ int vstcps_start(
   // create semaphore
   if (vssem_init(&server->sem_zero, 0, 1) < 0)
   {
-    VSTCPS_DBG("Ooops; can't init semaphore");
+    VSTCPS_DBG("ooops; can't init semaphore");
     vsmutex_destroy(&server->mtx_list);
     sl_disconnect(server->sock);
     return VSTCPS_ERR_SEM;
@@ -263,7 +267,7 @@ int vstcps_start(
   if (vsthread_pool_init(&server->pool, max_clients + 1,
       priority, sched) != 0)
   {
-    VSTCPS_DBG("Ooops; can't create pool of threads");
+    VSTCPS_DBG("ooops; can't create pool of threads");
     vssem_destroy(&server->sem_zero);
     vsmutex_destroy(&server->mtx_list);
     sl_disconnect(server->sock);
@@ -281,7 +285,7 @@ int vstcps_start(
     &server->thread, vstcps_listen_port_thread, (void*) server);
   if (retv != 0)
   {
-    VSTCPS_DBG("Ooops; can't create thread");
+    VSTCPS_DBG("ooops; can't create thread");
 #ifdef VSTHREAD_POOL
     vsthread_pool_destroy(&server->pool);
 #endif // VSTHREAD_POOL
@@ -291,7 +295,7 @@ int vstcps_start(
     return VSTCPS_ERR_THREAD;
   }
 
-  VSTCPS_DBG("TCP server %s:%i started by 'vstcps_start' function",
+  VSTCPS_DBG("vstcps_start() finish: TCP server %s:%i started",
              host, port);
   return 0; // success
 }

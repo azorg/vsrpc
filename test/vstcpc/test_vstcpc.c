@@ -8,8 +8,8 @@
 //#include <time.h>
 #include "socklib.h"
 #include "vstcpc.h"
-#include "vstcpd_wrap.h"
-#include "vstcpd_common.h"
+#include "rpc_wrap.h"
+#include "rpc_common.h"
 //----------------------------------------------------------------------------
 #define HOST "127.0.0.1"
 //#define HOST "192.168.7.177"
@@ -67,7 +67,7 @@ int main()
   t1 = get_time();
   err = vsrpc_remote_ping(&obj.rpc, &i);
   t2 = get_time();
-  printf("t2 - t1 = %f (vsrpc_remote_ping)\n", t2 - t1);
+  printf("dt = %f (vsrpc_remote_ping)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
   if (err != VSRPC_ERR_NONE)
   {
@@ -79,7 +79,7 @@ int main()
   t1 = get_time();
   err = vsrpc_remote_ping(&obj.rpc, &i);
   t2 = get_time();
-  printf("t2 - t1 = %f (vsrpc_remote_ping)\n", t2 - t1);
+  printf("dt = %f (vsrpc_remote_ping)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
   if (err != VSRPC_ERR_NONE)
     fprintf(stderr, "vsrpc_remote_ping() error %i\n", err);
@@ -89,7 +89,7 @@ int main()
   t1 = get_time();
   err = vsrpc_remote_ping(&obj.rpc, &i);
   t2 = get_time();
-  printf("t2 - t1 = %f (vsrpc_remote_ping)\n", t2 - t1);
+  printf("dt = %f (vsrpc_remote_ping)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
   if (err != VSRPC_ERR_NONE)
     fprintf(stderr, "vsrpc_remote_ping() error %i\n", err);
@@ -97,32 +97,32 @@ int main()
   printf("\npress ENTER to run remote procedure (3 times)\n");
   fgetc(stdin);
   
-  // print #1
+  // atoi #1
   vsmutex_lock(&obj.mtx_rpc);
   t1 = get_time();
-  i = vstcpd_print(&obj.rpc, "Hello!");
+  i  = rpc_atoi(&obj.rpc, "Hello!");
   t2 = get_time();
-  printf("t2 - t1 = %f (vstcpd_print)\n", t2 - t1);
+  printf("dt = %f (rpc_atoi)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
-  printf(">>> vstcpd_print() return %i\n", i);
+  printf(">>> rpc_atoi() return %i\n", i);
   
-  // print #2
+  // atoi #2
   vsmutex_lock(&obj.mtx_rpc);
   t1 = get_time();
-  i = vstcpd_print(&obj.rpc, "12345");
+  i  = rpc_atoi(&obj.rpc, "12345");
   t2 = get_time();
-  printf("t2 - t1 = %f (vstcpd_print)\n", t2 - t1);
+  printf("dt = %f (rpc_atoi)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
-  printf(">>> vstcpd_print() return %i\n", i);
+  printf(">>> rpc_atoi() return %i\n", i);
   
-  // print #3
+  // atoi #3
   vsmutex_lock(&obj.mtx_rpc);
   t1 = get_time();
-  i = vstcpd_print(&obj.rpc, "-12345");
+  i  = rpc_atoi(&obj.rpc, "-12345");
   t2 = get_time();
-  printf("t2 - t1 = %f (vstcpd_print)\n", t2 - t1);
+  printf("dt = %f (rpc_atoi)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
-  printf(">>> vstcpd_print() return %i\n", i);
+  printf(">>> rpc_atoi() return %i\n", i);
   
   printf("\npress ENTER to run write/read test\n");
   fgetc(stdin);
@@ -135,9 +135,9 @@ int main()
     
     vsmutex_lock(&obj.mtx_rpc);
     t1 = get_time();
-    err = vstcpd_test_call(&obj.rpc, size);
+    err = rpc_test_call(&obj.rpc, size);
     if (err != VSRPC_ERR_NONE)
-      fprintf(stderr, "vstcpd_test_call() error %i\n", err);
+      fprintf(stderr, "rpc_test_call() error %i\n", err);
     
     err = vsrpc_write(&obj.rpc, (const char*) buf2, size * sizeof(int));
     if (err != VSRPC_ERR_NONE)
@@ -147,9 +147,9 @@ int main()
     if (err != VSRPC_ERR_NONE)
       fprintf(stderr, "vsrpc_read() error %i\n", err);
     
-    err = vstcpd_test_wait(&obj.rpc);
+    err = rpc_test_wait(&obj.rpc);
     if (err != VSRPC_ERR_NONE)
-      fprintf(stderr, "vstcpd_test_wait() error %i\n", err);
+      fprintf(stderr, "rpc_test_wait() error %i\n", err);
     t2 = get_time();
     vsmutex_unlock(&obj.mtx_rpc);
     
@@ -161,7 +161,7 @@ int main()
     if (j)
       printf("!!! errors = %i\n", j);
     
-    printf("t2 - t1 = %f (write/read %i bytes)\n",
+    printf("dt = %f (write/read %i bytes)\n",
             t2 - t1, (int) (size * sizeof(int)));
   } // for
 
@@ -178,7 +178,7 @@ int main()
   if (err != VSRPC_ERR_NONE)
     fprintf(stderr, "vsrpc_remote_malloc() error %i\n", err);
   if (err == -VSRPC_ERR_NONE)
-    printf("t2 - t1 = %f (vsrpc_remote_malloc)\n", t2 - t1);
+    printf("dt = %f (vsrpc_remote_malloc)\n", t2 - t1);
   t1 = get_time();
   err = vsrpc_remote_write(&obj.rpc,
                            (void*) buf, // ptr - source address
@@ -189,7 +189,7 @@ int main()
   if (err != VSRPC_ERR_NONE)
     fprintf(stderr, "vsrpc_remote_write() error %i\n", err);
   if (err == -VSRPC_ERR_NONE && i == size)
-    printf("t2 - t1 = %f (vsrpc_remote_write)\n", t2 - t1);
+    printf("dt = %f (vsrpc_remote_write)\n", t2 - t1);
   
   printf("\npress ENTER to read from server %i bytes\n", size);
   fgetc(stdin);
@@ -205,7 +205,7 @@ int main()
     fprintf(stderr, "vsrpc_remote_read() error %i\n", err);
   vsmutex_unlock(&obj.mtx_rpc);
   if (j == -VSRPC_ERR_NONE && i == size)
-    printf("t2 - t1 = %f (vsrpc_remote_read)\n", t2 - t1);
+    printf("dt = %f (vsrpc_remote_read)\n", t2 - t1);
   
   
   // check read data

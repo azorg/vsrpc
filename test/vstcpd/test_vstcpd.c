@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "socklib.h"
 #include "vstcpd.h"
-#include "vstcpd_server.h"
+#include "rpc_server.h"
 //----------------------------------------------------------------------------
 #define HOST "0.0.0.0"
 #define PORT 7777
@@ -39,9 +39,9 @@ int main()
   for (port = PORT; port < (PORT + PORT_NUM); port++)
   {
 #if 1
-    if (vstcpd_start(&serv, vstcpd_vsrpc_func, def_fn, VSRPC_PERM_ALL,
+    if (vstcpd_start(&serv, rpc_vsrpc_func, def_fn, VSRPC_PERM_ALL,
 #else
-    if (vstcpd_start(&serv, vstcpd_vsrpc_func, NULL, VSRPC_PERM_ALL,
+    if (vstcpd_start(&serv, rpc_vsrpc_func, NULL, VSRPC_PERM_ALL,
 #endif
                      HOST, port, MAX_CLIENTS,
                      NULL, // context

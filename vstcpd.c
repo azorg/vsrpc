@@ -29,7 +29,7 @@ static int vstcpd_on_accept(
   
   if (pc == NULL)
   {
-    VSTCPD_DBG("Ooops; malloc() return NULL: reject connection");
+    VSTCPD_DBG("ooops; malloc() return NULL: reject connection");
     return -1;
   }
 
@@ -86,7 +86,7 @@ static void vstcpd_on_connect(
   
   if (retv != VSRPC_ERR_NONE)
   {
-    VSTCPD_DBG("Ooops; can't init VSRPC: vsrpc_init() return %i)", retv);
+    VSTCPD_DBG("ooops; can't init VSRPC: vsrpc_init() return %i)", retv);
     VSTCPD_DBG("vstcpd_on_connect() finish");
     return;
   }
@@ -94,7 +94,7 @@ static void vstcpd_on_connect(
   while (1)
   {
     // wait request from client side
-    VSTCPD_DBG("run cycle: 'while ((sl_select(fd=%i, timeout=%i) == 0);'",
+    VSTCPD_DBG("run cycle: while ((sl_select(fd=%i, timeout=%i) == 0);",
                fd, VSTCPD_SELECT_TIMEOUT);
 
     while ((retv = sl_select(fd, VSTCPD_SELECT_TIMEOUT)) == 0)
@@ -103,7 +103,7 @@ static void vstcpd_on_connect(
                  fd, VSTCPD_SELECT_TIMEOUT);
     }
     
-    VSTCPD_DBG("sl_select(fd=%i, timeout=%i) return %i ('%s')",
+    VSTCPD_DBG("sl_select(fd=%i, timeout=%i) return %i: '%s'",
                fd, VSTCPD_SELECT_TIMEOUT, retv,
                retv < 0 ? sl_error_str(retv) : (retv ? "true" : "false"));
 
@@ -115,7 +115,7 @@ static void vstcpd_on_connect(
     // allow run 1 procedure on server
     retv = vsrpc_run(&pc->rpc);
     
-    VSTCPD_DBG("vsrpc_run() return %i ('%s')", retv, vsrpc_error_str(retv));
+    VSTCPD_DBG("vsrpc_run() return %i: '%s'", retv, vsrpc_error_str(retv));
     
     // check VSRPC return value
     if (retv != VSRPC_ERR_EMPTY &&
@@ -203,6 +203,9 @@ int vstcpd_start(
      rpc_def_func = vstcpd_def_func_debug;
 #endif
     
+  VSTCPD_DBG("vstcpd_start(host=%s, port=%i, max_clients=%i) start",
+             host, port, max_clients);
+
   // fill server structure
   server->func     = rpc_functions;
   server->def_func = rpc_def_func;
@@ -224,7 +227,9 @@ int vstcpd_start(
     priority, sched);     // POSIX threads attributes
   
   if (retv != VSTCPS_ERR_NONE)
-    VSTCPD_DBG("Ooops; can't create server: vstcps_start() return %i", retv);
+    VSTCPD_DBG("ooops; can't create server: vstcps_start() return %i", retv);
+  
+  VSTCPD_DBG("vstcpd_start() finish");
 
   return retv;
 }

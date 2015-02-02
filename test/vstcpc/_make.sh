@@ -1,8 +1,9 @@
 #!/bin/sh
 
 ../../vsrpc_idl.sh \
-  --input-file ../vstcpd/vstcpd.vsidl \
-  --client-out-dir client
+  --input-file ../vstcpd/rpc.vsidl \
+  --client-out-dir client \
+  --fn-prefix rpc_
 
-make all
+make all -j4
 

@@ -540,7 +540,7 @@ int sl_udp_read(int fd, void *buf, int size, unsigned *ipaddr)
                  (struct sockaddr*) &client, (socklen_t*) &len);
 #else // SL_WIN32
   ret = recvfrom(fd, buf, size, 0,
-                 (struct sockaddr*) &client, (socklen_ti*) &len);
+                 (struct sockaddr*) &client, (socklen_t*) &len);
 #endif // SL_WIN32
 
   if (ret < 0)

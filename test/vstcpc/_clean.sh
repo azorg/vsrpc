@@ -3,7 +3,7 @@
 make clean
 
 ../../vsrpc_idl.sh \
-  --input-file ../vstcpd/vstcpd.vsidl \
+  --input-file ../vstcpd/rpc.vsidl \
   --client-out-dir client \
   --clean
 

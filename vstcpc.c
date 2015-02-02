@@ -39,7 +39,7 @@ static void *vstcpc_thread(void *arg)
         retv != VSRPC_ERR_EMPTY &&
         retv != VSRPC_ERR_RET)
     { // close connection
-      VSTCPC_DBG("Ooops; disconnected by VSRPC error (retv=%i)", retv);
+      VSTCPC_DBG("ooops; disconnected by VSRPC error (retv=%i)", retv);
       break; // VSRPC error
     }
   
@@ -79,9 +79,9 @@ int vstcpc_start(
 
   if (retv < 0)
   {
-    VSTCPC_DBG("Ooops; sl_connect_to_server() return %i ('%s')",
+    VSTCPC_DBG("ooops; sl_connect_to_server() return %i: '%s'",
                retv, sl_error_str(retv));
-    VSTCPC_DBG("Can't connect to TCP/IP server %s:%i", host, port);
+    VSTCPC_DBG("can't connect to TCP/IP server %s:%i", host, port);
     return -1;
   }
   VSTCPC_DBG("sl_connect_to_server() finish");
@@ -102,21 +102,21 @@ int vstcpc_start(
   
   if (retv != VSRPC_ERR_NONE)
   {
-    VSTCPC_DBG("Ooops; can't init VSRPC (retv=%i)", retv);
+    VSTCPC_DBG("ooops; can't init VSRPC (retv=%i)", retv);
     return -2;
   }
   
   // create semaphore
   if (vsmutex_init(&vstcpc->mtx_rpc))
   {
-    VSTCPC_DBG("Ooops; can't init mutex");
+    VSTCPC_DBG("ooops; can't init mutex");
     return -3;
   }
   
 #ifdef VSTHREAD_POOL
   if (vsthread_pool_init(&vstcpc->pool, 1, priority, sched) != 0) //!!!
   {
-    VSTCPC_DBG("Ooops; can't create pool of threads");
+    VSTCPC_DBG("ooops; can't create pool of threads");
     return -4;
   }
 #endif // VSTHREAD_POOL
@@ -131,7 +131,7 @@ int vstcpc_start(
     &vstcpc->thread, vstcpc_thread, (void*) vstcpc);
   if (retv != 0)
   {
-    VSTCPC_DBG("Ooops; can't create thread");
+    VSTCPC_DBG("ooops; can't create thread");
     return -5;
   }
 

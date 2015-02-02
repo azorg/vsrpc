@@ -4,12 +4,30 @@ OUT_DIR     := .
 #CLEAN_FILES := "$(OUT_DIR)/$(OUT_NAME).exe"
 #----------------------------------------------------------------------------
 # 1-st way to select source files
-#SRCS := 
-#HDRS := 
+SRCS := \
+	../../socklib/socklib.c \
+	../../vsrpc.c \
+	../../vssync.c \
+	../../vsthread.c \
+	../../vstcps.c \
+	../../vstcpd.c \
+  server/rpc_common.c \
+  server/rpc_server.c \
+  test_vstcpd.c
+
+HDRS := \
+	../../socklib/socklib.h \
+	../../vsrpc.h \
+	../../vssync.h \
+	../../vsthread.h \
+	../../vstcps.h \
+	../../vstcpd.h \
+  server/rpc_common.h \
+  server/rpc_server.h
 
 # 2-nd way to select source files
-SRC_DIRS := . ../.. server ../../socklib
-HDR_DIRS := . ../.. server ../../socklib
+#SRC_DIRS := . ../.. server ../../socklib
+#HDR_DIRS := . ../.. server ../../socklib
 #----------------------------------------------------------------------------
 OPTIM := -O3
 WARN  := -Wall
@@ -26,4 +44,3 @@ endif
 include ../Makefile.os
 include ../Makefile.skel
 #----------------------------------------------------------------------------
-
