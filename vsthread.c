@@ -3,6 +3,7 @@
  * Version: 0.8
  * File: "vsthread.c"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
+ * (C) 2008 Anton Shmigirilov <shmigirilov@gmail.com>
  */
 
 #include "vsthread.h"

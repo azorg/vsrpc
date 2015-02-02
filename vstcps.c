@@ -3,6 +3,7 @@
  * Version: 0.8
  * File: "vstcps.c"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
+ * (C) 2008 Anton Shmigirilov <shmigirilov@gmail.com>
  */
 
 //----------------------------------------------------------------------------
@@ -13,18 +14,19 @@
 #include <string.h>  // strlen()
 //----------------------------------------------------------------------------
 // listen 1 client (1 thread per 1 client)
-static void *vstcps_exchange_thread(void *arg)
+static void *vstcps_on_connect_thread(void *arg)
 {
   vstcps_client_t *client = (vstcps_client_t*) arg;
   vstcps_t *server = client->server;
 
-  VSTCPS_DBG("vstcps_exchange_thread() start");
+  VSTCPS_DBG("vstcps_on_connect_thread() start");
   
-  if (server->on_exchange != NULL)
-    server->on_exchange(client->fd, client->ipaddr, 
-                        client->context, server->context);
-  
-  VSTCPS_DBG("server->on_exchanged() finish");
+  if (server->on_connect != NULL)
+  {
+    server->on_connect(client->fd, client->ipaddr, 
+                       client->context, server->context);
+    VSTCPS_DBG("server->on_connect() finish");
+  }
 
   // disconnect
   vsmutex_lock(&server->mtx_list);
@@ -58,7 +60,7 @@ static void *vstcps_exchange_thread(void *arg)
   
   vsmutex_unlock(&server->mtx_list);
   
-  VSTCPS_DBG("vstcps_exchange_thread() finish");
+  VSTCPS_DBG("vstcps_on_connect_thread() finish");
   return NULL;
 }
 //----------------------------------------------------------------------------
@@ -125,17 +127,48 @@ static void *vstcps_listen_port_thread(void *arg)
                sl_inet_ntoa(ipaddr),
                server->count);
 
-    if (server->on_connect != NULL)
-      server->on_connect(&client->context, server->context, server->count);
-    
-    // create thread and start on_exchange()
+    if (server->on_accept != NULL)
+    {
+      retv = server->on_accept(fd, ipaddr, &client->context, server->context,
+                               server->count);
+      VSTCPS_DBG("server->on_accept() finish and return %i", retv);
+
+      if (retv != 0)
+      { // disconnect
+        VSTCPS_DBG("Connection rejected by on_accept()");
+
+        if (--server->count == 0)
+        {
+          vssem_post(&server->sem_zero);
+          server->first = server->last = NULL;
+        }
+        else
+        {
+          if (client->prev != NULL)
+            client->prev->next = client->next;
+          else
+            server->first = client->next;
+
+          if (client->next != NULL)
+            client->next->prev = client->prev;
+          else
+            server->last = client->prev;
+        }
+        free((void*) client); // free memory
+        vsmutex_unlock(&server->mtx_list);
+        sl_disconnect(fd);
+        continue;
+      }
+    }
+
+    // create thread and start on_connect()
     retv = vsthread_create(
 #ifdef VSTHREAD_POOL
       &server->pool,
 #else
       server->priority, server->sched,
 #endif // !VSTHREAD_POOL
-      &client->thread, vstcps_exchange_thread, (void*) client);
+      &client->thread, vstcps_on_connect_thread, (void*) client);
     if (retv != 0)
     {
       VSTCPS_DBG("Ooops; can't create thread");
@@ -160,12 +193,14 @@ int vstcps_start(
   int max_clients,         // max clients
   void *server_context,    // pointer to optional server context or NULL
   
-  void (*on_connect)(      // on connect callback function
+  int (*on_accept)(        // on connect callback function
+    int fd,                    // socket
+    unsigned ipaddr,           // client IPv4 address
     void **client_context,     // client context
     void *server_context,      // server context
     int count),                // clients count
 
-  void (*on_exchange)(     // on exchange callback function
+  void (*on_connect)(      // on connect callback function
     int fd,                    // socket
     unsigned ipaddr,           // client IPv4 address
     void *client_context,      // client context
@@ -184,8 +219,8 @@ int vstcps_start(
   server->first = server->last = NULL;
   server->max_clients = max_clients;
   server->context = server_context;
+  server->on_accept     = on_accept;
   server->on_connect    = on_connect;
-  server->on_exchange   = on_exchange;
   server->on_disconnect = on_disconnect;
 
   // make server socket

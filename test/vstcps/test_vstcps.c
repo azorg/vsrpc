@@ -16,17 +16,31 @@
 //----------------------------------------------------------------------------
 vstcps_t serv;
 //----------------------------------------------------------------------------
-// on connect callback function
-void on_connect(
+// on accept callback function
+int on_accept(
+  int fd,                // socket
+  unsigned ipaddr,       // client IPv4 address
   void **client_context, // client context
   void *server_context,  // server context
   int count)             // clients count
 {
-  printf("on_connect(%i)\n", count);
+  static int reject = 1;
+  
+  printf("on_accept(fd=%i, IP=%s, count=%i)",
+         fd, sl_inet_ntoa(ipaddr), count);
+  
+  reject = reject ? 0 : 1;
+  
+  if (reject)
+    printf(" => REJECT\n");
+  else
+    printf(" => ACCEPT (try again)\n");
+
+  return reject;
 }
 //----------------------------------------------------------------------------
 // on exchange callback function
-void on_exchange( 
+void on_connect( 
   int fd,                // socket
   unsigned ipaddr,       // client IPv4 address
   void *client_context,  // client context
@@ -37,7 +51,7 @@ void on_exchange(
   char *msg1 = "Hello, remote User!\nEnter any string:";
   char *msg2 = "Thanks and bye-bye!\n";
 
-  printf("on_exchange(IP=%s) start\n", sl_inet_ntoa(ipaddr));
+  printf("on_connect(fd=%i, IP=%s) start\n", fd, sl_inet_ntoa(ipaddr));
   
   sl_write(fd, (const void*) msg1, strlen(msg1));
   i = sl_read(fd, (void*) buf, 255);
@@ -85,8 +99,8 @@ int main()
   if (vstcps_start(&serv,
                    HOST, PORT, MAX_CLIENTS,
                    (void*) NULL, // server context
+                   on_accept,
                    on_connect,
-                   on_exchange,
                    on_disconnect,
                    16, SCHED_FIFO) != 0)
     return -1;

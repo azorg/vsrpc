@@ -3,6 +3,7 @@
  * Version: 0.8
  * File: "vsthread.h"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
+ * (C) 2008 Anton Shmigirilov <shmigirilov@gmail.com>
  */
 
 #ifndef VSTHREAD_H

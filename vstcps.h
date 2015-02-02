@@ -3,6 +3,7 @@
  * Version: 0.8
  * File: "vstcps.h"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
+ * (C) 2008 Anton Shmigirilov <shmigirilov@gmail.com>
  */
 
 #ifndef VSTCPS_H
@@ -62,12 +63,14 @@ struct vstcps_ {
   vstcps_client_t *last;  // structure of last connected client
   void *context;          // pointer to optional server context or NULL
   
-  void (*on_connect)(     // on connect callback function
+  int (*on_accept)(       // on accept callback function
+    int fd,                   // socket
+    unsigned ipaddr,          // client IPv4 address
     void **client_context,    // client context
     void *server_context,     // server context
     int count);               // clients count
   
-  void (*on_exchange)(    // on exchange callback function
+  void (*on_connect)(     // on connect callback function
     int fd,                   // socket
     unsigned ipaddr,          // client IPv4 address
     void *client_context,     // client context
@@ -107,12 +110,14 @@ int vstcps_start(
   int max_clients,        // max clients
   void *server_context,   // pointer to optional server context or NULL
   
-  void (*on_connect)(     // on connect callback function
+  int (*on_accept)(       // on accept callback function
+    int fd,                   // socket
+    unsigned ipaddr,          // client IPv4 address
     void **client_context,    // client context
     void *server_context,     // server context
     int count),               // clients count
   
-  void (*on_exchange)(    // on exchange callback function
+  void (*on_connect)(     // on connect callback function
     int fd,                   // socket
     unsigned ipaddr,          // client IPv4 address
     void *client_context,     // client context

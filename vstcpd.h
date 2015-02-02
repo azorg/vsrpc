@@ -56,7 +56,9 @@ struct vstcpd_ {
   int perm;               // VSRPC permissions
   void *context;          // pointer to optional server data or NULL
 
-  void (*on_connect)(     // on connect callback function
+  int (*on_accept)(       // on accept callback function
+    int fd,                   // socket
+    unsigned ipaddr,          // client IPv4 address
     void **client_context,    // client context
     void *server_context,     // server context
     int count);               // clients count
@@ -94,7 +96,9 @@ int vstcpd_start(
   int max_clients,             // max clients
   void *server_context,        // pointer to optional server data or NULL
 
-  void (*on_connect)(          // start callback function or NULL
+  int (*on_accept)(            // on accept callback function or NULL
+    int fd,                        // socket
+    unsigned ipaddr,               // client IPv4 address
     void **client_context,         // client context
     void *server_context,          // server context
     int count),                    // clients count

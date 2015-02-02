@@ -12,30 +12,49 @@
 #include <string.h> // strlen()
 #include <stdlib.h> // malloc(), free()
 //----------------------------------------------------------------------------
-// on connect callback function
-static void vstcpd_on_connect(
+// on accept callback function
+static int vstcpd_on_accept(
+  int fd,                // socket
+  unsigned ipaddr,       // client IPv4 address
   void **client_context, // client context
   void *server_context,  // server context
   int count)             // clients count
 {
+  int retv = 0;
   vstcpd_t *ps = (vstcpd_t*) server_context;
   vstcpd_client_t *pc = (vstcpd_client_t*) malloc(sizeof(vstcpd_client_t));
 
-  VSTCPD_DBG("vstcpd_on_connect(%i) start", count);
+  VSTCPD_DBG("vstcpd_on_accept(fd=%i, IP=%s, count=%i) start",
+             fd, sl_inet_ntoa(ipaddr), count);
   
+  if (pc == NULL)
+  {
+    VSTCPD_DBG("Ooops; malloc() return NULL: reject connection");
+    return -1;
+  }
+
   vsmutex_init(&pc->mtx_fd);
   pc->server = ps;
   pc->context = NULL;
   *client_context = pc;
 
-  if (ps->on_connect != NULL)
-    ps->on_connect(&pc->context, ps->context, count);
+  if (ps->on_accept != NULL)
+  {
+    retv = ps->on_accept(fd, ipaddr, &pc->context, ps->context, count);
+    if (retv != 0)
+    { // reject
+      VSTCPD_DBG("on_accept() return %i, reject connection", retv);
+      vsmutex_destroy(&pc->mtx_fd);
+      free(pc);
+    }
+  }
 
-  VSTCPD_DBG("vstcpd_on_connect(%i) finish", count);
+  VSTCPD_DBG("vstcpd_on_accept() finish");
+  return retv;
 }
 //----------------------------------------------------------------------------
-// on exchange callback function
-static void vstcpd_on_exchange(
+// on connect callback function
+static void vstcpd_on_connect(
   int fd,               // socket
   unsigned ipaddr,      // client IPv4 address
   void *client_context, // client context
@@ -46,8 +65,8 @@ static void vstcpd_on_exchange(
   vstcpd_t *ps = pc->server;
   pc->ipaddr = ipaddr;
 
-  VSTCPD_DBG("vstcpd_on_exchanget(IP=%s) start",
-             sl_inet_ntoa(pc->ipaddr));
+  VSTCPD_DBG("vstcpd_on_connect(fd=%i, IP=%s) start",
+             fd, sl_inet_ntoa(pc->ipaddr));
 
   // new client connected
   // init VSRPC structure
@@ -66,7 +85,7 @@ static void vstcpd_on_exchange(
   if (retv != VSRPC_ERR_NONE)
   {
     VSTCPD_DBG("Ooops; can't init VSRPC: vsrpc_init() return %i)", retv);
-    VSTCPD_DBG("vstcpd_on_exchange(IP=%s) finish",
+    VSTCPD_DBG("vstcpd_on_connect(IP=%s) finish",
                 sl_inet_ntoa(pc->ipaddr));
     return;
   }
@@ -94,7 +113,7 @@ static void vstcpd_on_exchange(
 
   vsrpc_release(&pc->rpc); // stop VSRPC
   
-  VSTCPD_DBG("vstcpd_on_exchanget(IP=%s) finish",
+  VSTCPD_DBG("vstcpd_on_connect(IP=%s) finish",
               sl_inet_ntoa(pc->ipaddr));
 }
 //----------------------------------------------------------------------------
@@ -145,7 +164,9 @@ int vstcpd_start(
   int max_clients,             // max clients
   void *server_context,        // pointer to optional server data or NULL
 
-  void (*on_connect)(          // start callback function or NULL
+  int (*on_accept)(            // on accept callback function or NULL
+    int fd,                        // socket
+    unsigned ipaddr,               // client IPv4 address
     void **client_context,         // client context
     void *server_context,          // server context
     int count),                    // clients count
@@ -167,8 +188,8 @@ int vstcpd_start(
   server->def_func = rpc_def_func;
   server->perm     = rpc_permissions | VSRPC_PERM_EXIT;
   server->context  = server_context;
-  server->on_connect     = on_connect;
-  server->on_disconnect  = on_disconnect;
+  server->on_accept     = on_accept;
+  server->on_disconnect = on_disconnect;
 
   // start server (create VSTCPS object)
   retv = vstcps_start(
@@ -177,8 +198,8 @@ int vstcpd_start(
     port,                 // server listen TCP port
     max_clients,          // max clients
     (void*) server,       // pointer to optional server context or NULL
+    vstcpd_on_accept,     // on accept callback function
     vstcpd_on_connect,    // on connect callback function
-    vstcpd_on_exchange,   // on exchange callback function
     vstcpd_on_disconnect, // on disconnect callback function
     priority, sched);     // POSIX threads attributes
   
