@@ -7,5 +7,3 @@ make clean
   --client-out-dir client \
   --clean
 
-rm -rf client
-

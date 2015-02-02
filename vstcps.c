@@ -87,8 +87,7 @@ static void *vstcps_listen_port_thread(void *arg)
     if (fd < 0)
     {
       VSTCPS_DBG("ooops; sl_accept(IP=%s) return %i<0: '%s'",
-
-               sl_inet_ntoa(ipaddr), fd, sl_error_str(fd));
+                 sl_inet_ntoa(ipaddr), fd, sl_error_str(fd));
       break;
     }
     VSTCPS_DBG("sl_accept(IP=%s) return %i", sl_inet_ntoa(ipaddr), fd);

@@ -5,5 +5,6 @@
   --fn-prefix  rpc_ \
 	--server-out-dir server
 
-make all -j4
+test `uname` = Linux && OPT='-j4'
+make ${OPT}
 

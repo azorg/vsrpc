@@ -210,8 +210,7 @@ $hr
 #include <stdio.h> // fprintf()
 #include "vsrpc.h" // vsrpc_error_str()
 $hr
-#define VSRPC_ERROR_DBG(err, rpc) \\\\
-  fprintf(stderr, "VSRPC error %i: '%s'\n", err, vsrpc_error_str(err));
+#define VSRPC_ERROR_DBG(err, rpc) fprintf(stderr, "VSRPC error %i: '%s'\n", err, vsrpc_error_str(err));
 $hr
 EOF`
 

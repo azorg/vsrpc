@@ -1,3 +1,4 @@
-#!/bin/sh
-make all -j4
+#! /bin/sh
+test `uname` = Linux && OPT='-j4'
+make ${OPT}
 
