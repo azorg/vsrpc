@@ -4,7 +4,7 @@
 ifndef WIN32
 # Linux:
 CFLAGS   := $(DEFS) $(OPTIM) $(WARN) $(CFLAGS) -pipe
-LDFLAGS  := -lpthread
+LDFLAGS  := -lpthread -lrt
 else
 # Windows (MinGW):
 EXEC_EXT := .exe

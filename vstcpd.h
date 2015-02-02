@@ -13,8 +13,8 @@
 //----------------------------------------------------------------------------
 // select default timeout [ms] (-1 : infinite)
 #ifndef VSTCPD_SELECT_TIMEOUT
-#  define VSTCPD_SELECT_TIMEOUT -1
-//#  define VSTCPD_SELECT_TIMEOUT 1000
+//#  define VSTCPD_SELECT_TIMEOUT -1
+#  define VSTCPD_SELECT_TIMEOUT 3000
 #endif
 //----------------------------------------------------------------------------
 // include debuging output
