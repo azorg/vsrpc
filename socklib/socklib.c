@@ -12,6 +12,10 @@
 #include "socklib.h"
 //----------------------------------------------------------------------------
 #ifdef SL_WIN32 // winsock
+#  ifdef SL_USE_POLL
+#    warning "use select() instead of poll() under Windows"
+#    undef SL_USE_POLL
+#  endif
 #  include <windows.h>
 #  include <winsock.h>
    typedef int socklen_t;

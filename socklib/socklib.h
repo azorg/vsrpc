@@ -22,6 +22,7 @@
 #ifdef SL_WIN32 // winsocks
 #  include <windows.h>
 #  include <winsock.h>
+#  include <winsock2.h> //
 #else // SL_WIN32
 #  include <errno.h>      // errno
 #  include <sys/time.h>   // select()

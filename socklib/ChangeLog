@@ -6,6 +6,7 @@ ChangeLog for TCP/UDP sockets library "socklib".
 2015.02.02 [grinkov]
  * update sl_error_str(), correct sl_select() description
  * format text
+ * allways use select() instead of poll() under Windows
  * version 0.12
 
 2015.02.01 [grinkov]
