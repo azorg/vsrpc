@@ -1,6 +1,6 @@
 /*
  * Very Simple FIFO (Very Simple Remote Procedure Call (VSRPC) project)
- * Version: 0.8
+ * Version: 0.9
  * File: "vsfifo.c"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
  */

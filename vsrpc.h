@@ -1,6 +1,6 @@
 /*
  * Very Simple Remote Procedure Call (VSRPC) project
- * Version: 0.8
+ * Version: 0.9
  * File: "vsrpc.h"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
  */
@@ -24,7 +24,7 @@
 #endif // VSRPC_INLINE
 //----------------------------------------------------------------------------
 // version of protocol
-#define VSRPC_VERSION "0.8.0"
+#define VSRPC_VERSION "0.9.0"
 
 // if type float and double exist
 // use atof(...), snprintf("%g"...), etc
@@ -77,22 +77,24 @@
 #define VSRPC_SELECT_TIMEOUT (-1)
 
 // common error codes (return values)
+#define VSRPC_ERR_RET     1 // function complete and return
 #define VSRPC_ERR_NONE    0 // no error all success
-#define VSRPC_ERR_RET    -1 // 1 function complete and return
-#define VSRPC_ERR_FNF    -2 // function not found
-#define VSRPC_ERR_PERM   -3 // permission denied
-#define VSRPC_ERR_EOP    -4 // end of pipe (disconnect)
-#define VSRPC_ERR_EMPTY  -5 // empty pipe (no data in pipe) if non block read
-#define VSRPC_ERR_OVER   -6 // input buffer too big
-#define VSRPC_ERR_MEM    -7 // memory error (malloc return NULL)
-#define VSRPC_ERR_NFMB   -8 // no free memory block
-#define VSRPC_ERR_TBMB   -9 // try to allocate too big memory block
-#define VSRPC_ERR_BUSY  -10 // can't call more the one function
-#define VSRPC_ERR_NRUN  -11 // procedure not run yet
-#define VSRPC_ERR_PROT  -12 // error of protocol
-#define VSRPC_ERR_BARG  -13 // bad argument
-#define VSRPC_ERR_EXIT  -14 // client call "exit" => goodbye
-#define VSRPC_NUM_ERRORS 15
+#define VSRPC_ERR_FNF    -1 // function not found
+#define VSRPC_ERR_PERM   -2 // permission denied
+#define VSRPC_ERR_EOP    -3 // end of pipe (disconnect)
+#define VSRPC_ERR_EMPTY  -4 // empty pipe (no data in pipe) if non block read
+#define VSRPC_ERR_OVER   -5 // input buffer too big
+#define VSRPC_ERR_MEM    -6 // memory error (malloc return NULL)
+#define VSRPC_ERR_NFMB   -7 // no free memory block
+#define VSRPC_ERR_TBMB   -8 // try to allocate too big memory block
+#define VSRPC_ERR_BUSY   -9 // can't call more the one function
+#define VSRPC_ERR_NRUN  -10 // procedure not run yet
+#define VSRPC_ERR_PROT  -11 // error of protoco
+#define VSRPC_ERR_BARG  -12 // bad argument
+#define VSRPC_ERR_EXIT  -13 // client call "exit" => goodbye
+
+#define VSRPC_ERROR_NUM        15          // look vsrpc_error_str() code
+#define VSRPC_ERROR_INDEX(err) (1 - (err)) // 
 
 // permissions flags
 #define VSRPC_PERM_READ   (1<<0) // read memory from server

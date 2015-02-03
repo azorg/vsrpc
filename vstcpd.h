@@ -1,6 +1,6 @@
 /*
  * Very Simple TCP/IP Daemon based on VSRPC and VSTCPS
- * Version: 0.8
+ * Version: 0.9
  * File: "vstcpd.h"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
  */

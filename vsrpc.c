@@ -1,6 +1,6 @@
 /*
  * Very Simple Remote Procedure Call (VSRPC) project
- * Version: 0.8
+ * Version: 0.9
  * File: "vsrpc.c"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
  */
@@ -28,8 +28,8 @@ static vsrpc_func_t vsrpc_builtin_functions[] = {
 };
 //----------------------------------------------------------------------------
 const char *vsrpc_errors[] = {
-  "all success",
   "function complete and return",
+  "no error all success",
   "function not found",
   "permission denied",
   "end of pipe (disconnect)",
@@ -68,8 +68,8 @@ char *vsrpc_realloc(char *old, int old_size, int new_size)
 // return VSRPC error string
 const char *vsrpc_error_str(int err)
 {
-  err = -err;
-  return (err >= 0 && err < VSRPC_NUM_ERRORS) ?
+  err = VSRPC_ERROR_INDEX(err);
+  return (err >= 0 && err < VSRPC_ERROR_NUM) ?
          (char*) vsrpc_errors[err] :
          (char*) vsrpc_error_unknown;
 }

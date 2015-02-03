@@ -1,6 +1,6 @@
 /*
  * Very simple wrappers over syncronization primitives in POSIX way
- * Version: 0.8
+ * Version: 0.9
  * File: "vssync.h"
  * (C) 2008 Anton Shmigirilov <shmigirilov@gmail.com>
  * (C) 2008-2015 Alex Grinkov <a.grinkov@gmail.com>

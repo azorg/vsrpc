@@ -1,6 +1,6 @@
 /*
  * Very Simple TCP/IP Server based on threads (without VSRPC)
- * Version: 0.8
+ * Version: 0.9
  * File: "vstcps.c"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
  * (C) 2008 Anton Shmigirilov <shmigirilov@gmail.com>

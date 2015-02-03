@@ -1,6 +1,6 @@
 /*
  * Very Simple TCP Client based on VSRPC and POSIX threads
- * Version: 0.8
+ * Version: 0.9
  * File: "vstcpc.h"
  * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
  */
