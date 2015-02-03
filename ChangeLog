@@ -5,6 +5,7 @@ This is the ChangeLog of Very Simple Remote Procedure Call Project (VSRPC)
 
 2015.02.03 [grinkov]
  * fix vsrpc_idl.sh (add RetTypeGrep, add sl_init() to example)
+ * big changes in vsrpc_idl.sh (--fn_prefix, --remote_suffix, --local-suffix)
  * version 0.9
 
 2015.02.02 [grinkov]

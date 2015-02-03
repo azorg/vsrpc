@@ -9,10 +9,9 @@ SRCS := \
 	../../vssync.c \
 	../../vsthread.c \
 	../../vstcpc.c \
-  client/rpc_wrap.h \
-  client/rpc_client.c \
-  client/rpc_wrap.c \
-  test_vstcpc.c
+        client/rpc_remote.c \
+        client/rpc_client.c \
+        test_vstcpc.c
 
 HDRS := \
 	../../socklib/socklib.h \
@@ -20,8 +19,9 @@ HDRS := \
 	../../vssync.h \
 	../../vsthread.h \
 	../../vstcpc.h \
-  client/rpc_client.h \
-  client/rpc_common.h
+        client/rpc_remote.h \
+        client/rpc_client.h \
+        client/rpc_client_dbg.h
 
 # 2-nd way to select source files
 #SRC_DIRS := . ../.. client ../../socklib

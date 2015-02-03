@@ -2,8 +2,8 @@
 
 ../../vsrpc_idl.sh \
   --input-file rpc.vsidl \
-  --fn-prefix  rpc_ \
-	--server-out-dir server
+  --server-out-dir server \
+  --fn-prefix rpc_
 
 test `uname` = Linux && OPT='-j4'
 make ${OPT}

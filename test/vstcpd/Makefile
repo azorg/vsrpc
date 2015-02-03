@@ -8,12 +8,12 @@ SRCS := \
 	../../socklib/socklib.c \
 	../../vsrpc.c \
 	../../vssync.c \
-	../../vsthread.c \
+        ../../vsthread.c \
 	../../vstcps.c \
 	../../vstcpd.c \
-  server/rpc_common.c \
-  server/rpc_server.c \
-  test_vstcpd.c
+        server/rpc_local.c \
+        server/rpc_server.c \
+        test_vstcpd.c
 
 HDRS := \
 	../../socklib/socklib.h \
@@ -22,8 +22,8 @@ HDRS := \
 	../../vsthread.h \
 	../../vstcps.h \
 	../../vstcpd.h \
-  server/rpc_common.h \
-  server/rpc_server.h
+        server/rpc_local.h \
+        server/rpc_server.h
 
 # 2-nd way to select source files
 #SRC_DIRS := . ../.. server ../../socklib

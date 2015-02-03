@@ -8,8 +8,8 @@
 //#include <time.h>
 #include "socklib.h"
 #include "vstcpc.h"
-#include "rpc_wrap.h"
-#include "rpc_common.h"
+#include "rpc_remote.h"
+#include "rpc_client.h"
 //----------------------------------------------------------------------------
 #define HOST "127.0.0.1"
 //#define HOST "192.168.7.177"
@@ -100,7 +100,7 @@ int main()
   // atoi #1
   vsmutex_lock(&obj.mtx_rpc);
   t1 = get_time();
-  i  = rpc_atoi(&obj.rpc, "Hello!");
+  i  = rpc_atoi_remote(&obj.rpc, "Hello!");
   t2 = get_time();
   printf("dt = %f (rpc_atoi)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
@@ -109,7 +109,7 @@ int main()
   // atoi #2
   vsmutex_lock(&obj.mtx_rpc);
   t1 = get_time();
-  i  = rpc_atoi(&obj.rpc, "12345");
+  i  = rpc_atoi_remote(&obj.rpc, "12345");
   t2 = get_time();
   printf("dt = %f (rpc_atoi)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);
@@ -118,7 +118,7 @@ int main()
   // atoi #3
   vsmutex_lock(&obj.mtx_rpc);
   t1 = get_time();
-  i  = rpc_atoi(&obj.rpc, "-12345");
+  i  = rpc_atoi_remote(&obj.rpc, "-12345");
   t2 = get_time();
   printf("dt = %f (rpc_atoi)\n", t2 - t1);
   vsmutex_unlock(&obj.mtx_rpc);

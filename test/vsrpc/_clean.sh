@@ -4,8 +4,8 @@ rm -f *.o
 
 ../../vsrpc_idl.sh \
   --input-file prj.vsidl \
-  --server-out-dir server \
-  --client-out-dir client \
+  --server-out-dir   server \
+  --client-out-dir   client \
   --examples-out-dir examples \
   --clean
 
