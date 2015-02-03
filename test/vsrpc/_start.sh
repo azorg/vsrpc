@@ -20,15 +20,15 @@ ${GCC} ${CFLAGS} -c ../../socklib/socklib.c || exit
 ${GCC} ${CFLAGS} -c examples/prj_server_example.c || exit
 ${GCC} ${CFLAGS} -c server/prj_server.c || exit
 ${GCC} ${CFLAGS} -c server/prj_common.c || exit
-${LD} ${LDFLAGS} prj_server_example.o prj_common.o prj_server.o vsrpc.o socklib.o \
-              -o prj_server_example || exit
+${LD} prj_server_example.o prj_common.o prj_server.o vsrpc.o socklib.o \
+   -o prj_server_example ${LDFLAGS} || exit
 
 
 ${GCC} ${CFLAGS} -c examples/prj_client_example.c || exit
 ${GCC} ${CFLAGS} -c client/prj_client.c || exit
 ${GCC} ${CFLAGS} -c client/prj_wrap.c || exit
-${LD} ${LDFLAGS} prj_client_example.o prj_client.o prj_wrap.o vsrpc.o \
-                 socklib.o -o prj_client_example || exit
+${LD} prj_client_example.o prj_client.o prj_wrap.o vsrpc.o socklib.o \
+	 -o prj_client_example ${LDFLAGS} || exit
 
 [ ! -e fifo ] && mkfifo fifo
 
