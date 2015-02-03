@@ -743,7 +743,7 @@ do
   then # form sorce for "server" side
     echo "${local_proto}" >> "${server_out_dir}/${prj}${local_h}"
 
-    tmp=`grep "^ *${RetTypeGrep} *${ProcNameC} *(" "${server_out_dir}/${prj}${local_c}"`
+    tmp=`grep "^ *${RetTypeGrep} *${ProcNameC}${local_suffix} *(" "${server_out_dir}/${prj}${local_c}"`
     [ -z "$tmp" ] && \
       echo "${local_func}" >> "${server_out_dir}/${prj}${local_c}" 
     
