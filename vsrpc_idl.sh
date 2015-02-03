@@ -608,6 +608,7 @@ do
   do
     # read every function prototype
     RetType=`get_type $ret` # type of return value
+    RetTypeGrep=`echo $RetType | sed 's/\*/\\\*/g'`
     ProcNameC="${fn_prefix}${ProcName}"
     RetNum=0
     Ret1=""
@@ -716,7 +717,7 @@ do
     
     if [ "$server" = "yes" ]
     then
-      tmp=`grep "^ *${RetType} *${ProcNameC} *(" "${server_out_dir}/${prj}${common_c}"`
+      tmp=`grep "^ *${RetTypeGrep} *${ProcNameC} *(" "${server_out_dir}/${prj}${common_c}"`
       [ -z "$tmp" ] && \
         echo "${common_func}" >> "${server_out_dir}/${prj}${common_c}" 
     fi
