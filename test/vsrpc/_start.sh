@@ -37,4 +37,6 @@ cat fifo | ./prj_server_example | tee log2 | ./prj_client_example | tee log1 > f
 #gprof prj_server_example > gprof_server.rpt
 #gprof prj_client_example > gprof_client.rpt
 
+# check results
+cmp log1 log1.pat && cmp log2 log2.pat && echo && echo ">>> test finished [OK]"
 

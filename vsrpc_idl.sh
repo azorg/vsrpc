@@ -305,6 +305,9 @@ int main()
 {
   int retv, ack;
   double t;
+  
+  // socklib init
+  sl_init();
 
   // init VSRPC structure
   vsrpc_init(
@@ -396,7 +399,7 @@ int main()
 {
   int retv;
 
-  // init "sock_lib"
+  // socklib init
   sl_init();
   
   // init VSRPC structure

@@ -4,7 +4,7 @@ This is the ChangeLog of Very Simple Remote Procedure Call Project (VSRPC)
  * changed
 
 2015.02.03 [grinkov]
- * fix vsrpc_idl.sh (add RetTypeGrep)
+ * fix vsrpc_idl.sh (add RetTypeGrep, add sl_init() to example)
 
 2015.02.02 [grinkov]
  + add vsrpc_error_str() in `vsrpc` like sl_error_str() in `socklib`
