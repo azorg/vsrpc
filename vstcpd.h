@@ -65,7 +65,7 @@ struct vstcpd_ {
     void **client_context,    // client context
     void *server_context,     // server context
     int count);               // clients count
-  
+
   void (*on_disconnect)(  // on disconnect callback function
     void *client_context);    // client context
 };
@@ -105,7 +105,7 @@ int vstcpd_start(
     void **client_context,         // client context
     void *server_context,          // server context
     int count),                    // clients count
-  
+
   void (*on_disconnect)(       // terminate callback function or NULL
     void *client_context),         // client context
 

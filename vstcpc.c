@@ -15,37 +15,48 @@ static void *vstcpc_thread(void *arg)
 {
   vstcpc_t *vstcpc = (vstcpc_t*) arg;
   int retv;
-  
+
   while (1)
   {
     // wait request from client side
     while ((retv = sl_select(vstcpc->fd, VSTCPC_SELECT_TIMEOUT)) == 0);
-    
+
     vsmutex_lock(&vstcpc->mtx_rpc);
     if (retv < 0)
     { // error of connection
       VSTCPC_DBG("thread 'vstcpc_thread' finish; disconnected");
       break;
     }
-    
+
     // allow run 1 procedure on client
     retv = vsrpc_run(&vstcpc->rpc); // allow run 1 procedure
-    
+
     // check VSRPC return value
-    if (retv == VSRPC_ERR_EXIT || retv == VSRPC_ERR_EOP)
-      break; // server say "goodbye" or close connection
-    
+    if (retv == VSRPC_ERR_EXIT)
+    { // exit
+      VSTCPC_DBG("server say exit(%i), disconnected",
+                 vsrpc_exit_value(&vstcpc->rpc));
+      break;
+    }
+
+    if (retv == VSRPC_ERR_EOP)
+    { // end of pipe
+      VSTCPC_DBG("server disconnected");
+      break;
+    }
+
     if (retv != VSRPC_ERR_NONE &&
         retv != VSRPC_ERR_EMPTY &&
         retv != VSRPC_ERR_RET)
-    { // close connection
-      VSTCPC_DBG("ooops; disconnected by VSRPC error (retv=%i)", retv);
-      break; // VSRPC error
+    { // VRPC error
+      VSTCPC_DBG("ooops; disconnected by VSRPC error %i: '%s'",
+                 retv, vsrpc_error_str(retv));
+      break;
     }
-  
+
     vsmutex_unlock(&vstcpc->mtx_rpc);
   } // while (1)
-  
+
 #ifdef VSWIN32
   closesocket(vstcpc->fd);
 #else // VSWIN32
@@ -54,7 +65,7 @@ static void *vstcpc_thread(void *arg)
 #endif // VSWIN32
   vstcpc->active = 0;
   vsmutex_unlock(&vstcpc->mtx_rpc);
-  
+
   return NULL;
 }
 //----------------------------------------------------------------------------
@@ -73,7 +84,7 @@ int vstcpc_start(
 {
   int retv;
   vstcpc->active = 0;
-  
+
   // connect to server (make client socket)
   retv = sl_connect_to_server(host, port);
 
@@ -85,7 +96,7 @@ int vstcpc_start(
     return -1;
   }
   VSTCPC_DBG("sl_connect_to_server() finish");
-  
+
   // init VSRPC structure
   vstcpc->fd = retv;
   retv = vsrpc_init(
@@ -99,20 +110,20 @@ int vstcpc_start(
     sl_write,              // write() function
     sl_select,             // select() function
     (void (*)(int)) NULL); // flush() function
-  
+
   if (retv != VSRPC_ERR_NONE)
   {
     VSTCPC_DBG("ooops; can't init VSRPC (retv=%i)", retv);
     return -2;
   }
-  
+
   // create semaphore
   if (vsmutex_init(&vstcpc->mtx_rpc))
   {
     VSTCPC_DBG("ooops; can't init mutex");
     return -3;
   }
-  
+
 #ifdef VSTHREAD_POOL
   if (vsthread_pool_init(&vstcpc->pool, 1, priority, sched) != 0) //!!!
   {
@@ -120,7 +131,7 @@ int vstcpc_start(
     return -4;
   }
 #endif // VSTHREAD_POOL
-  
+
   // create thread
   retv = vsthread_create(
 #ifdef VSTHREAD_POOL
@@ -152,12 +163,12 @@ void vstcpc_stop(
     &vstcpc->pool,
 #endif // VSTHREAD_POOL
     vstcpc->thread, NULL);
-  
+
 #ifdef VSTHREAD_POOL
   // destroy pool of threads
   vsthread_pool_destroy(&vstcpc->pool);
 #endif // VSTHREAD_POOL
-  
+
   // destroy VSRPC
   vsrpc_release(&vstcpc->rpc);
 

@@ -20,11 +20,11 @@ static void *vstcps_on_connect_thread(void *arg)
   vstcps_t *server = client->server;
 
   VSTCPS_DBG("vstcps_on_connect_thread() start");
-  
+
   if (server->on_connect != NULL)
   {
     VSTCPS_DBG("server->on_connect() start");
-    server->on_connect(client->fd, client->ipaddr, 
+    server->on_connect(client->fd, client->ipaddr,
                        client->context, server->context);
     VSTCPS_DBG("server->on_connect() finish");
   }
@@ -55,16 +55,16 @@ static void *vstcps_on_connect_thread(void *arg)
     server->on_disconnect(client->context);
     VSTCPS_DBG("server->on_disconnect() finish");
   }
-  
+
   sl_disconnect(client->fd);
 
   VSTCPS_DBG("client disconnected: IP=%s, count=%d",
              sl_inet_ntoa(client->ipaddr), server->count);
-  
+
   free((void*) client); // free memory
-  
+
   vsmutex_unlock(&server->mtx_list);
-  
+
   VSTCPS_DBG("vstcps_on_connect_thread() finish");
   return NULL;
 }
@@ -101,7 +101,7 @@ static void *vstcps_listen_port_thread(void *arg)
       sl_disconnect(fd);
       continue;
     }
-    
+
     // new client connected
     // allocate memory for connected client
     client = (vstcps_client_t*) malloc(sizeof(vstcps_client_t));
@@ -186,7 +186,7 @@ static void *vstcps_listen_port_thread(void *arg)
 
     vsmutex_unlock(&server->mtx_list);
   } // while (1)
-  
+
   vsmutex_unlock(&server->mtx_list);
 
   VSTCPS_DBG("vstcpd_listen_port_thread() finish");
@@ -201,7 +201,7 @@ int vstcps_start(
   int port,                // server listen TCP port
   int max_clients,         // max clients
   void *server_context,    // pointer to optional server context or NULL
-  
+
   int (*on_accept)(        // on connect callback function
     int fd,                    // socket
     unsigned ipaddr,           // client IPv4 address
@@ -214,10 +214,10 @@ int vstcps_start(
     unsigned ipaddr,           // client IPv4 address
     void *client_context,      // client context
     void *server_context),     // server context
-  
+
   void (*on_disconnect)(   // on disconnect callback function
     void *client_context),     // client context
-  
+
   int priority, int sched) // POSIX threads attributes
 {
   int retv;
@@ -344,7 +344,7 @@ void vstcps_stop(vstcps_t *server)
 int vstcps_foreach(
   vstcps_t *server,       // pointer to VSTCPS object
   void *foreach_context,  // pointer to optional context or NULL
-  
+
   void (*on_foreach)(     // on foreach callback function
     int fd,                  // socket
     unsigned ipaddr,         // client IPv4 address
@@ -360,7 +360,7 @@ int vstcps_foreach(
   client = server->first;
   while (client != NULL)
   {
-    on_foreach(client->fd, client->ipaddr, 
+    on_foreach(client->fd, client->ipaddr,
                client->context, server->context, foreach_context,
                i, server->count);
     i++;

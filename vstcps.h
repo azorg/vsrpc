@@ -62,20 +62,20 @@ struct vstcps_ {
   vstcps_client_t *first; // structure of first connected client
   vstcps_client_t *last;  // structure of last connected client
   void *context;          // pointer to optional server context or NULL
-  
+
   int (*on_accept)(       // on accept callback function
     int fd,                   // socket
     unsigned ipaddr,          // client IPv4 address
     void **client_context,    // client context
     void *server_context,     // server context
     int count);               // clients count
-  
+
   void (*on_connect)(     // on connect callback function
     int fd,                   // socket
     unsigned ipaddr,          // client IPv4 address
     void *client_context,     // client context
     void *server_context);    // server context
-  
+
   void (*on_disconnect)(  // on disconnect callback function
     void *client_context);    // client context
 
@@ -109,23 +109,23 @@ int vstcps_start(
   int port,               // server listen TCP port
   int max_clients,        // max clients
   void *server_context,   // pointer to optional server context or NULL
-  
+
   int (*on_accept)(       // on accept callback function
     int fd,                   // socket
     unsigned ipaddr,          // client IPv4 address
     void **client_context,    // client context
     void *server_context,     // server context
     int count),               // clients count
-  
+
   void (*on_connect)(     // on connect callback function
     int fd,                   // socket
     unsigned ipaddr,          // client IPv4 address
     void *client_context,     // client context
     void *server_context),    // server context
-  
+
   void (*on_disconnect)(  // on disconnect callback function
     void *client_context),    // client context
-  
+
   int priority, int sched // POSIX threads attributes
 );
 //----------------------------------------------------------------------------
@@ -137,7 +137,7 @@ void vstcps_stop(vstcps_t *server);
 int vstcps_foreach(
   vstcps_t *server,       // pointer to VSTCPS object
   void *foreach_context,  // pointer to optional context or NULL
-  
+
   void (*on_foreach)(     // on foreach callback function
     int fd,                  // socket
     unsigned ipaddr,         // client IPv4 address

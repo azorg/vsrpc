@@ -26,12 +26,12 @@ int on_accept(
   int count)             // clients count
 {
   static int reject = 1; // FIXME (bad code)
-  
+
   printf(">>> on_accept(fd=%i, IP=%s, count=%i)",
          fd, sl_inet_ntoa(ipaddr), count);
-  
+
   reject = reject ? 0 : 1;
-  
+
   if (reject)
     printf(" => REJECT (try again)\n");
   else
@@ -41,7 +41,7 @@ int on_accept(
 }
 //----------------------------------------------------------------------------
 // on connect callback function
-void on_connect( 
+void on_connect(
   int fd,                // socket
   unsigned ipaddr,       // client IPv4 address
   void *client_context,  // client context
@@ -53,7 +53,7 @@ void on_connect(
   char *msg2 = "Thanks and bye-bye!\n";
 
   printf(">>> on_connect(fd=%i, IP=%s) start\n", fd, sl_inet_ntoa(ipaddr));
-  
+
   sl_write(fd, (const void*) msg1, strlen(msg1));
   i = sl_read(fd, (void*) buf, 255);
   if (i > 0)
@@ -62,7 +62,7 @@ void on_connect(
     printf(">>> client get: %s\n", buf);
   }
   sl_write(fd, (const void*) msg2, strlen(msg2));
-  
+
   printf(">>> on_connect() finish\n");
 }
 //----------------------------------------------------------------------------
@@ -98,7 +98,7 @@ int main()
   printf("\npress ENTER to start\n");
   fgetc(stdin);
   printf("vstcps_start()\n");
-  
+
   for (port = PORT; port < (PORT + PORT_NUM); port++)
   {
     if (vstcps_start(&serv,
@@ -110,7 +110,7 @@ int main()
                      16, SCHED_FIFO) == 0)
       break;
   }
-  
+
   if (port == (PORT + PORT_NUM))
   {
     printf("can't create server socket; exit\n");
@@ -118,7 +118,7 @@ int main()
   }
   else
     printf(">>> TCP server start on %i port\n", port);
-  
+
 #if 1
   printf("\npress ENTER to push for each client\n");
   fgetc(stdin);
@@ -132,7 +132,7 @@ int main()
 
   printf("vstcps_stop()\n");
   vstcps_stop(&serv);
-  
+
   printf("\npress ENTER to exit\n");
   fgetc(stdin);
   return 0;

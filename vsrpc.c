@@ -52,7 +52,7 @@ char *vsrpc_realloc(char *old, int old_size, int new_size)
 {
   int min_size;
   char *new;
-  
+
   if (old_size == new_size)
     return old; // do nothing
   min_size = new_size > old_size ? old_size : new_size;
@@ -60,7 +60,7 @@ char *vsrpc_realloc(char *old, int old_size, int new_size)
   if (new != NULL)
     memcpy((void*) new, (const void*) old, (size_t) min_size);
   vsrpc_free(old);
-    
+
   return new;
 }
 */
@@ -101,7 +101,7 @@ int vsrpc_init(
     int fd))              // file descriptor (socket)
 {
   int i;
-  
+
   // fill VSRPC structure by arguments
   rpc->func     = func;
   rpc->def_func = def_func;
@@ -113,14 +113,14 @@ int vsrpc_init(
   rpc->write    = fn_write;
   rpc->select   = fn_select;
   rpc->flush    = fn_flush;
-  
+
   // init input bufer
   rpc->inbuf_size = rpc->inbuf_cnt = rpc->inbuf_len = 0;
   rpc->inbuf_max_size = VSRPC_INBUF_MAX_SIZE;
-  
+
   // reset return values by default
   rpc->retc = 0;
-  
+
   // set pointer to build-in functions
   rpc->bfunc = vsrpc_builtin_functions;
 
@@ -139,8 +139,11 @@ int vsrpc_init(
   {
     rpc->mb[i].stat = 0; // set by default
     rpc->mb[i].size = 0; // all descriptors are free
-  } 
-  
+  }
+
+  // set exit value to default
+  rpc->exit_value = 0;
+
   return VSRPC_ERR_NONE;
 }
 //----------------------------------------------------------------------------
@@ -157,7 +160,7 @@ void vsrpc_release(vsrpc_t* rpc)
 
   // free memory from return values
   if (rpc->retc != 0) { vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
-  
+
   // free array of memory block structrures
   if (rpc->mb != (vsrpc_mb_t*) NULL)
   {
@@ -167,7 +170,7 @@ void vsrpc_release(vsrpc_t* rpc)
         continue;
       vsrpc_free((char*) rpc->mb[i].ptr);
       rpc->mb[i].size = 0; // free all sctructures
-    }  
+    }
     vsrpc_free((char*) rpc->mb);
     rpc->mb = (vsrpc_mb_t*) NULL;
   }
@@ -180,20 +183,20 @@ int vsrpc_run(vsrpc_t* rpc)
   int retv, argc;
   vsrpc_func_t *fn;
   vsrpc_func_t *bfn;
-  
+
   // set VSRPC state
   if (rpc->state == VSRPC_STOP)
     rpc->state = VSRPC_LISTEN; // run server (and listen client)
-  
+
   // free memory from previous return values
   if (rpc->retc != 0) { vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
-  
+
   while (1)
   {
     // read string from input pipe
     retv = vsrpc_gets(rpc);
     if (retv != VSRPC_ERR_NONE) break;
-   
+
     // unpack arguments list
     if ((argv = vsrpc_str2argv(rpc->inbuf_ptr)) == (char**) NULL)
     {
@@ -213,7 +216,7 @@ int vsrpc_run(vsrpc_t* rpc)
       if (rpc->state != VSRPC_LISTEN) // VSRPC_CALL || VSRPC_CBACK
       {
         if (argc > 1)
-        { // return argument list exist 
+        { // return argument list exist
           rpc->retv = vsrpc_shift_argv(argv); // return values
           rpc->retc = argc - 1;
         }
@@ -261,7 +264,7 @@ int vsrpc_run(vsrpc_t* rpc)
       if (retv != VSRPC_ERR_NONE) break; // return error
       continue;
     }
-    
+
     // check permission for callback
     if ( rpc->state == VSRPC_CALL &&
          (rpc->perm & VSRPC_PERM_CBACK) == 0 )
@@ -302,7 +305,7 @@ int vsrpc_run(vsrpc_t* rpc)
         continue;
       }
     }
-    
+
     // try to find "buildin" function
     for (bfn = rpc->bfunc; bfn->fname != (char*) NULL; bfn++)
       if (strcmp(bfn->fname, fname) == 0) break;
@@ -323,7 +326,7 @@ int vsrpc_run(vsrpc_t* rpc)
       if (retv == VSRPC_ERR_EXIT || retv == VSRPC_ERR_EOP)
       { // exit by remote machine
         if (argc > 1 && retv == VSRPC_ERR_EXIT)
-        { // exit argument list exist 
+        { // exit argument list exist
           rpc->retv = vsrpc_shift_argv(argv); // return values
           rpc->retc = argc - 1;
         }
@@ -338,7 +341,7 @@ int vsrpc_run(vsrpc_t* rpc)
       }
       continue;
     }
-   
+
     // try to run "default" function
     if (rpc->def_func != (char** (*)(vsrpc_t*, int, char *const[])) NULL)
     {
@@ -363,13 +366,13 @@ int vsrpc_run(vsrpc_t* rpc)
       }
       continue;
     }
-    
+
     // function not found
     vsrpc_free_argv(argv); // free memory from argv
     retv = vsrpc_return_error(rpc, VSRPC_ERR_FNF);
     if (retv != VSRPC_ERR_NONE) break; // return error
   } // while (1)
-  
+
   // restore VSRPC state
   if (retv != VSRPC_ERR_EMPTY)
   {
@@ -378,7 +381,7 @@ int vsrpc_run(vsrpc_t* rpc)
     else // rpc->state == VSRPC_LISTEN || rpc->state == VSRPC_CALL
       rpc->state = VSRPC_STOP;
   }
-  
+
   return retv;
 }
 //----------------------------------------------------------------------------
@@ -391,7 +394,7 @@ int vsrpc_run_forever(vsrpc_t *rpc)
     if (vsrpc_select(rpc, VSRPC_SELECT_TIMEOUT) == 0) continue;
     retv = vsrpc_run(rpc);
     if (retv != VSRPC_ERR_EMPTY &&
-    retv != VSRPC_ERR_RET && 
+    retv != VSRPC_ERR_RET &&
     retv != VSRPC_ERR_NONE) break;
   }
   return retv;
@@ -415,11 +418,11 @@ int vsrpc_call(vsrpc_t *rpc, char * const argv[])
 
   // free memory from previous return values if need
   if (rpc->retc != 0) { vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
-  
+
   // prepare string to call
   str = vsrpc_argv2str(argv);
   if (str == (char*) NULL) return VSRPC_ERR_MEM; // abnormal return
-  
+
   // call procedure on another part
   argc = vsrpc_putsn(rpc, str);
   vsrpc_free(str); // free memory
@@ -427,13 +430,13 @@ int vsrpc_call(vsrpc_t *rpc, char * const argv[])
 
   // flush output pipe
   if (rpc->flush != (void (*)(int)) NULL) rpc->flush(rpc->fd_wr);
-  
+
   // switch state to "ANOTHER PART IS BUSY"
   if (rpc->state == VSRPC_STOP)
     rpc->state = VSRPC_CALL; // client listen and wait server
   else // rpc->state == VSRPC_LISTEN
     rpc->state = VSRPC_CBACK; // server listen and wait client
-  
+
   return VSRPC_ERR_NONE; // ok, but remote function not finished yet
 }
 //----------------------------------------------------------------------------
@@ -447,11 +450,11 @@ int vsrpc_call_ex(vsrpc_t *rpc, const char *list, ...)
   if (list == (char*) NULL) return VSRPC_ERR_BARG; // some check
   argc = strlen(list); // very easy!
   if (argc == 0) return VSRPC_ERR_BARG; // check argument
-  
+
   // malloc argv array
   argv = (char**) vsrpc_malloc ((argc + 1) * (int)sizeof(char*));
   if (argv == (char**) NULL) return VSRPC_ERR_MEM; // memory exeption
-  
+
   va_start(ap, list);
   for (i = 0; i < argc; i++)
   {
@@ -467,13 +470,13 @@ int vsrpc_call_ex(vsrpc_t *rpc, const char *list, ...)
   }
   argv[argc] = (char*) NULL; // place to end
   va_end(ap);
-  
+
   // send procedure and argument(s) to remote machine
   i = vsrpc_call(rpc, argv);
-  
+
   // free memory from argument list
   vsrpc_free_argv(argv);
-  
+
   return i;
 }
 //----------------------------------------------------------------------------
@@ -484,7 +487,7 @@ int vsrpc_check(vsrpc_t *rpc)
   if (rpc->state == VSRPC_STOP || rpc->state == VSRPC_LISTEN)
     // sory procedure not run yet
     return VSRPC_ERR_NRUN; // abnormal return
-  
+
   // listen another part, wait return value(s) or error message
   return vsrpc_run(rpc);
 }
@@ -521,14 +524,14 @@ int vsrpc_read_one(vsrpc_t *rpc, char *ptr, int size, int *count)
 {
   int relict;
   char *src, *dst;
-  
+
   // check argument
   if (size <= 0)
   { // bad argument
     *count = 0;
     return VSRPC_ERR_NONE;
   }
-  
+
   // check text input bufer
   if ((relict = rpc->inbuf_cnt - rpc->inbuf_len) > 0)
   { // some bytes already in bufer
@@ -543,7 +546,7 @@ int vsrpc_read_one(vsrpc_t *rpc, char *ptr, int size, int *count)
     *count = size;
     return VSRPC_ERR_NONE;
   }
-  
+
   // try read from pipe
   size = rpc->read(rpc->fd_rd, (void*) ptr, size);
   if (size <= 0)
@@ -561,7 +564,7 @@ int vsrpc_read(vsrpc_t *rpc, char *ptr, int size)
 {
   int len, relict;
   char *src, *dst;
-  
+
   // check argument
   if (size <= 0)
     return VSRPC_ERR_NONE; // bad argument
@@ -581,7 +584,7 @@ int vsrpc_read(vsrpc_t *rpc, char *ptr, int size)
     size -= len;
     ptr += len;
   }
-  
+
   while (size > 0)
   { // read from pipe
     len = rpc->read(rpc->fd_rd, (void*) ptr, size);
@@ -613,10 +616,10 @@ int vsrpc_write(vsrpc_t *rpc, const char *ptr, int size)
 int vsrpc_gets_in(vsrpc_t* rpc)
 {
   int retv, i;
-    
+
   // Note:
   // 0 <= inbuf_len <= inbuf_cnt <= inbuf_size < inbuf_max_size
-  
+
   // rotate inbuf (remove previous message)
   if (rpc->inbuf_len != 0)
   {
@@ -634,7 +637,7 @@ int vsrpc_gets_in(vsrpc_t* rpc)
   }
   // Note:
   // 0 = inbuf_len <= inbuf_cnt <= inbuf_size < inbuf_max_size
-  
+
   while (1)
   {
     // find '\n' or '\r' in input bufer
@@ -646,7 +649,7 @@ int vsrpc_gets_in(vsrpc_t* rpc)
         rpc->inbuf_len = ++i;
         return VSRPC_ERR_NONE; // line in bufer ok
       }
-    }   
+    }
 
     // (re)allocate memory from bufer
     i = (rpc->inbuf_cnt + (VSRPC_INBUF_SECTOR*3/2)) / VSRPC_INBUF_SECTOR;
@@ -668,8 +671,8 @@ int vsrpc_gets_in(vsrpc_t* rpc)
       }
       rpc->inbuf_ptr = dst;
       rpc->inbuf_size = i; // store new size of input bufer
-    } 
-  
+    }
+
     // read block from input pipe
     if (rpc->select != (int (*)(int, int)) NULL)
       if (rpc->select(rpc->fd_rd, 0) == 0) // check for nonblock read
@@ -680,7 +683,7 @@ int vsrpc_gets_in(vsrpc_t* rpc)
       return VSRPC_ERR_EOP; // end of pipe (disconnect)
     rpc->inbuf_cnt += retv; // some bytes are read
   } // while (1)
-  
+
 }
 //----------------------------------------------------------------------------
 // get string from input pipe to input bufer
@@ -726,7 +729,7 @@ int vsrpc_return_value(vsrpc_t *rpc, char * const retv[])
 {
   char *str, *buf;
   int cnt, bsize, size = sizeof(VSRPC_RETURN_KEYWORD) - 1;
-  
+
   cnt = ((str = vsrpc_argv2str(retv)) != (char*) NULL) ? strlen(str) + 1 : 0;
   buf = vsrpc_malloc(bsize = size + cnt + 1);
   if (buf == (char*) NULL) return VSRPC_ERR_MEM;
@@ -738,13 +741,13 @@ int vsrpc_return_value(vsrpc_t *rpc, char * const retv[])
     vsrpc_free(str);
   }
   buf[bsize - 1] = VSRPC_CR;
-  
+
   cnt = vsrpc_write(rpc, buf, bsize);
   vsrpc_free(buf);
-  
+
   if (cnt == VSRPC_ERR_NONE) // flush output pipe
     if (rpc->flush != (void (*)(int)) NULL) rpc->flush(rpc->fd_wr);
-  
+
   return cnt;
 }
 //----------------------------------------------------------------------------
@@ -755,7 +758,7 @@ int vsrpc_return_error(vsrpc_t *rpc, int error)
 {
   char *str, *buf;
   int cnt, bsize, size = sizeof(VSRPC_ERROR_KEYWORD) - 1;
-  
+
   if ((str = vsrpc_int2str(error)) == (char*) NULL) return VSRPC_ERR_MEM;
   cnt = strlen(str) + 1;
   buf = vsrpc_malloc(bsize = size + cnt + 1);
@@ -765,13 +768,13 @@ int vsrpc_return_error(vsrpc_t *rpc, int error)
   memcpy((void*) &buf[size + 1], (const void*) str, (size_t) (cnt - 1));
   vsrpc_free(str);
   buf[bsize - 1] = VSRPC_CR;
-  
+
   cnt = vsrpc_write(rpc, buf, bsize);
   vsrpc_free(buf);
-  
+
   if (cnt == VSRPC_ERR_NONE) // flush output pipe
     if (rpc->flush != (void (*)(int)) NULL) rpc->flush(rpc->fd_wr);
-  
+
   return cnt;
 }
 //----------------------------------------------------------------------------
@@ -779,12 +782,12 @@ int vsrpc_return_error(vsrpc_t *rpc, int error)
 // format: 0-char(binary), 1-int(text), 2-float(text), 3-double(text)
 // return ErrorCode: VSRPC_ERR_NONE | VSRPC_ERR_EOP | VSRPC_ERR_MEM |
 //                   VSRPC_ERR_OVER
-int vsrpc_receive(vsrpc_t *rpc, const void *ptr, int size, 
+int vsrpc_receive(vsrpc_t *rpc, const void *ptr, int size,
                   int format, int *count)
 {
   int retv = VSRPC_ERR_BARG, cnt = 0;
   int *iptr;
-#ifdef VSRPC_FLOAT    
+#ifdef VSRPC_FLOAT
   float *fptr; double *dptr;
 #endif // VSRPC_FLOAT
 
@@ -805,7 +808,7 @@ int vsrpc_receive(vsrpc_t *rpc, const void *ptr, int size,
         cnt++;
       }
       break;
-#ifdef VSRPC_FLOAT    
+#ifdef VSRPC_FLOAT
     case 2: // float (text)
       fptr = (float*) ptr;
       while (size-- != 0)
@@ -831,9 +834,9 @@ int vsrpc_receive(vsrpc_t *rpc, const void *ptr, int size,
       }
       break;
 #endif // VSRPC_FLOAT
-  } // switch  
+  } // switch
   *count = cnt;
-  
+
   return retv;
 }
 //----------------------------------------------------------------------------
@@ -846,7 +849,7 @@ int vsrpc_transmit(vsrpc_t *rpc, const void *ptr, int size,
   int retv = VSRPC_ERR_BARG, cnt = 0;
   char *str;
   int *iptr;
-#ifdef VSRPC_FLOAT    
+#ifdef VSRPC_FLOAT
   float *fptr; double *dptr;
 #endif // VSRPC_FLOAT
 
@@ -866,7 +869,7 @@ int vsrpc_transmit(vsrpc_t *rpc, const void *ptr, int size,
         cnt++;
       }
       break;
-#ifdef VSRPC_FLOAT    
+#ifdef VSRPC_FLOAT
     case 2: // float (text)
       fptr = (float*) ptr;
       while (size-- != 0)
@@ -901,8 +904,8 @@ char *vsrpc_pack_str(const char *str)
 {
   char c, *src, *dst, *out;
   int cnt, empty = 0;
-  
-  if (str == (char*) NULL) return (char*) NULL; // bad argument 
+
+  if (str == (char*) NULL) return (char*) NULL; // bad argument
 
   // calculate size of output string
   cnt = 0;
@@ -918,7 +921,7 @@ char *vsrpc_pack_str(const char *str)
   if (cnt == 1)
     // empty string is pack specially as "\0"
     empty = cnt = 3;
-  
+
   // allocate memory for output string
   if ((dst = out = vsrpc_malloc(cnt)) == (char*) NULL)
     return (char*) NULL; // memory exeption
@@ -928,7 +931,7 @@ char *vsrpc_pack_str(const char *str)
     *dst++ = '\\';  *dst++= '0'; *dst = '\0';
     return out;
   }
-  
+
   // pack input string to output
   src = (char*)str;
   do {
@@ -939,7 +942,7 @@ char *vsrpc_pack_str(const char *str)
     else if (c == '\r') { *dst++ = '\\'; c = 'r'; }
     *dst++ = c;
   } while (c != '\0');
-  
+
   return out;
 }
 //----------------------------------------------------------------------------
@@ -948,8 +951,8 @@ char *vsrpc_unpack_str(const char *str)
 {
   char c, p, *src, *dst, *out;
   int cnt;
-  
-  if (str == (char*) NULL) return (char*) NULL; // bad argument 
+
+  if (str == (char*) NULL) return (char*) NULL; // bad argument
 
   // check if string was empty before packing
   if (strcmp(str, "\\0") == 0)
@@ -959,7 +962,7 @@ char *vsrpc_unpack_str(const char *str)
     *out = '\0';
     return out; // return empty string with '\0'
   }
-  
+
   // calculate size of output string
   cnt = 0;
   src = (char*)str;
@@ -974,7 +977,7 @@ char *vsrpc_unpack_str(const char *str)
   // allocate memory for output string
   if ((dst = out = vsrpc_malloc(cnt)) == (char*) NULL)
     return (char*) NULL; // abnormal return
-  
+
   // unpack input string to output
   src = (char*)str;
   do {
@@ -990,7 +993,7 @@ char *vsrpc_unpack_str(const char *str)
     }
     *dst++ = c;
   } while (c != '\0');
-  
+
   return out;
 }
 //----------------------------------------------------------------------------
@@ -1000,10 +1003,10 @@ char *vsrpc_argv2str(char * const argv[])
 {
   int i, len, argc;
   char **argv_local, *out, *dst;
-  
+
   if ((argc = vsrpc_argv2argc(argv)) == 0)
     return (char*) NULL; // bad argument
-    
+
   // allocate memory for local argv list
   argv_local = (char**) vsrpc_malloc ((argc + 1) * (int)sizeof(char*));
   if (argv_local == (char**) NULL)
@@ -1014,10 +1017,10 @@ char *vsrpc_argv2str(char * const argv[])
     if ((argv_local[i] = vsrpc_pack_str(argv[i])) == (char*) NULL)
     { // memory exeption
       vsrpc_free_argv(argv_local);
-      return (char*) NULL; // abnormal return 
+      return (char*) NULL; // abnormal return
     }
   argv_local[argc] = (char*) NULL; // place to end
-  
+
   // caclulate size of output string
   len = argc; // ' ' for each argument and '\0' at the end
   for (i = 0; i < argc; i++)
@@ -1027,9 +1030,9 @@ char *vsrpc_argv2str(char * const argv[])
   if ((out = vsrpc_malloc(len)) == (char*) NULL)
   { // memory exeption
     vsrpc_free_argv(argv_local);
-    return (char*) NULL; // abnormal return 
+    return (char*) NULL; // abnormal return
   }
-  
+
   // copy all argument to output string
   dst = out;
   for (i = 0; i < argc; i++)
@@ -1040,7 +1043,7 @@ char *vsrpc_argv2str(char * const argv[])
     *dst++ = ' '; // separator
   }
   *--dst = '\0'; // zero terminate
-  
+
   vsrpc_free_argv(argv_local);
   return out;
 }
@@ -1053,7 +1056,7 @@ char **vsrpc_str2argv(const char *str)
   char **argv; // return value
   int state; // 0-find_first, 1-find_last
   char c, p, *src, *dst, *ptr;
-  
+
   // count argc
   argc = state = 0;
   src = (char*) str;
@@ -1071,14 +1074,14 @@ char **vsrpc_str2argv(const char *str)
     }
     p = c; // store previous char
   } while (c != '\0');
-  
+
   if (argc == 0)
     return (char**) NULL; // bad argument
-  
+
   // malloc argv array
   argv = (char**) vsrpc_malloc ((argc + 1) * (int)sizeof(char*));
   if (argv == (char**) NULL) return (char**) NULL; // memory exeption
-  
+
   // fill argv
   argc = state = 0;
   src = ptr = (char*) str;
@@ -1103,7 +1106,7 @@ char **vsrpc_str2argv(const char *str)
           vsrpc_free(dst);
           dst = ptr;
         }
-        if ((argv[argc++] = dst) == (char*) NULL) 
+        if ((argv[argc++] = dst) == (char*) NULL)
         { // memory exeption
           vsrpc_free_argv(argv);
           return (char**) NULL; // abnormal return
@@ -1114,7 +1117,7 @@ char **vsrpc_str2argv(const char *str)
     src++;
     p = c; // store previous char
   } while (c != '\0');
-  
+
   argv[argc] = (char*) NULL; // place to end
   return argv;
 }
@@ -1127,15 +1130,15 @@ char **vsrpc_list2argv(const char *list, ...)
   va_list ap;
   int argc, i;
   char **argv, c, *s;
-  
+
   if (list == (char*) NULL) return (char**) NULL; // some check
   argc = strlen(list); // very easy!
   if (argc == 0) return (char**) NULL; // check argument
-  
+
   // malloc argv array
   argv = (char**) vsrpc_malloc ((argc + 1) * (int)sizeof(char*));
   if (argv == (char**) NULL) return (char**) NULL; // memory exeption
-  
+
   va_start(ap, list);
   for (i = 0; i < argc; i++)
   {
@@ -1151,7 +1154,7 @@ char **vsrpc_list2argv(const char *list, ...)
   }
   argv[argc] = (char*) NULL; // place to end
   va_end(ap);
-  
+
   return argv;
 }
 //----------------------------------------------------------------------------
@@ -1182,15 +1185,15 @@ char **vsrpc_shift_argv(char * const argv[])
   int argc, i, len;
   char **retv, *str;
 
-  // count input arguments 
+  // count input arguments
   if ((argc = vsrpc_argv2argc(argv)) < 2)
     return (char**) NULL; // bad argument
-  
+
   // allocate memory
   retv = (char**) vsrpc_malloc(argc * (int)sizeof(char*));
   if (retv == (char**) NULL)
     return (char**) NULL; // memory exeption
-  
+
   // copy arguments begin from second
   for (i = 1; i < argc; i++)
   {
@@ -1277,13 +1280,13 @@ char *vsrpc_stradd(int n, ...)
   va_list ap;
   char **strs, *str;
   int i, *lens, len;
-  
+
   if (n <= 0) return (char*) NULL;
   if ((strs = (char**) vsrpc_malloc(n)) == (char**) NULL)
     return (char*) NULL;
   if ((lens = (int*) vsrpc_malloc(n)) == (int*) NULL)
   { vsrpc_free((char*) strs); return (char*) NULL; }
-  
+
   va_start(ap, n);
   for (len = i = 0; i < n; i++)
   {
@@ -1309,7 +1312,7 @@ char *vsrpc_stradd(int n, ...)
     memcpy((void*) (str + len), (const void*) strs[i], (size_t) lens[i]);
     len += lens[i];
   }
-  
+
   vsrpc_free((char*) strs);
   vsrpc_free((char*) lens);
   str[len] = '\0';
@@ -1321,11 +1324,11 @@ char *vsrpc_bin2hex(const char *bin, int len)
 {
   char c, *src, *dst, *out;
   unsigned char val;
-  
+
   src = (char*)bin;
   if ((dst = out = vsrpc_malloc(len * 3)) == (char*) NULL)
     return (char*) NULL; // memory exeption
-  
+
   while (len-- != 0)
   {
     val = *src++;
@@ -1338,7 +1341,7 @@ char *vsrpc_bin2hex(const char *bin, int len)
     *dst++ = ':';
   }
   *--dst = '\0'; // terminate output string
-  
+
   return out;
 }
 //----------------------------------------------------------------------------
@@ -1347,12 +1350,12 @@ char *vsrpc_hex2bin(const char *str)
 {
   char h, l, *src, *dst, *out;
   int len;
-  
+
   len = strlen(src = (char*)str) + 1;
   if ((len % 3) != 0)
     return (char*) NULL; // syntax error ???
   len /= 3;
-  
+
   if ((dst = out = vsrpc_malloc(len)) == (char*) NULL)
     return (char*) NULL; // memory exeption
 
@@ -1388,7 +1391,7 @@ char *vsrpc_hex2bin(const char *str)
 char **vsrpc_builtin_malloc(vsrpc_t *rpc, int argc, char * const argv[])
 {
   int size, id;
-  
+
   // check permission
   if ((rpc->perm & VSRPC_PERM_MALLOC) == 0)
     return vsrpc_list2argv("i", VSRPC_ERR_PERM);
@@ -1396,10 +1399,10 @@ char **vsrpc_builtin_malloc(vsrpc_t *rpc, int argc, char * const argv[])
   // check argument
   if (argc != 2) return vsrpc_list2argv("i", VSRPC_ERR_BARG);
   size = vsrpc_str2int(argv[1]);
-  
+
   size = vsrpc_local_malloc(rpc, size, &id);
   if (size != VSRPC_ERR_NONE) return vsrpc_list2argv("i", size);
-  
+
   // all right -> return MemoryBlockID
   return vsrpc_list2argv("ii", VSRPC_ERR_NONE, id);
 }
@@ -1407,11 +1410,11 @@ char **vsrpc_builtin_malloc(vsrpc_t *rpc, int argc, char * const argv[])
 int vsrpc_local_malloc(vsrpc_t *rpc, int size, int *id) // return ErrorCode
 {
   int i;
-  
+
   // check argument
   if (size <= 0) return VSRPC_ERR_BARG; // bad argument
   if (size > rpc->mb_max_size) return VSRPC_ERR_TBMB; // size too big
-  
+
   // find free descriptor
   for (i = 0; i < VSRPC_MB_NUM; i++)
     if (rpc->mb[i].size == 0) break;
@@ -1432,15 +1435,15 @@ int vsrpc_local_malloc(vsrpc_t *rpc, int size, int *id) // return ErrorCode
 int vsrpc_remote_malloc(vsrpc_t *rpc, int size, int *id) // return ErrorCode
 {
   int retv;
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "si", "malloc", size);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   // check and return result
   if (rpc->retc == 1)
     retv = vsrpc_str2int(*rpc->retv);
@@ -1452,7 +1455,7 @@ int vsrpc_remote_malloc(vsrpc_t *rpc, int size, int *id) // return ErrorCode
   }
   else
     retv = VSRPC_ERR_PROT; // protocol error
-    
+
   if (rpc->retc != 0){ vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
   return retv;
 }
@@ -1464,7 +1467,7 @@ int vsrpc_remote_malloc(vsrpc_t *rpc, int size, int *id) // return ErrorCode
 char **vsrpc_builtin_free(vsrpc_t *rpc, int argc, char * const argv[])
 {
   int id;
-  
+
   // check permission
   if ((rpc->perm & VSRPC_PERM_FREE) == 0)
     return vsrpc_list2argv("i", VSRPC_ERR_PERM);
@@ -1472,7 +1475,7 @@ char **vsrpc_builtin_free(vsrpc_t *rpc, int argc, char * const argv[])
   // check argument
   if (argc != 2) return vsrpc_list2argv("i", VSRPC_ERR_BARG);
   id = vsrpc_str2int(argv[1]);
-  
+
   return vsrpc_list2argv("i", vsrpc_local_free(rpc, id));
 }
 //----------------------------------------------------------------------------
@@ -1482,7 +1485,7 @@ int vsrpc_local_free(vsrpc_t *rpc, int id) // return ErrorCode
   if (id < 0 || id >= VSRPC_MB_NUM) return VSRPC_ERR_BARG;
   if (rpc->mb[id].size == 0)        return VSRPC_ERR_BARG;
   if (rpc->mb[id].stat != 0)        return VSRPC_ERR_BARG;
-  
+
   // free memory block
   vsrpc_free(rpc->mb[id].ptr);
   rpc->mb[id].size = 0; // mark as free
@@ -1497,17 +1500,17 @@ int vsrpc_remote_free(vsrpc_t *rpc, int id) // return ErrorCode
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "si", "free", id);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   // check result
   if (rpc->retc == 1)
     retv = vsrpc_str2int(*rpc->retv);
-  else 
+  else
     retv = VSRPC_ERR_PROT; // protocol error
-  
+
   if (rpc->retc != 0){ vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
   return retv;
 }
@@ -1523,10 +1526,10 @@ char **vsrpc_builtin_stat(vsrpc_t *rpc, int argc, char * const argv[])
   // check argument
   if (argc != 2) return vsrpc_list2argv("i", VSRPC_ERR_BARG);
   id = vsrpc_str2int(argv[1]);
-  
+
   id = vsrpc_local_stat(rpc, id, &size, &stat);
   if (id != VSRPC_ERR_NONE) return vsrpc_list2argv("i", id);
-  
+
   // all right -> return size of MemoryBlock
   return vsrpc_list2argv("iii", VSRPC_ERR_NONE, size, stat);
 }
@@ -1542,15 +1545,15 @@ int vsrpc_local_stat(vsrpc_t *rpc, int id, int *size, int *stat)
 int vsrpc_remote_stat(vsrpc_t *rpc, int id, int *size, int *stat)
 {
   int retv;
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "si", "stat", id);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   // check and return result
   if (rpc->retc == 1)
     retv = vsrpc_str2int(*rpc->retv);
@@ -1562,7 +1565,7 @@ int vsrpc_remote_stat(vsrpc_t *rpc, int id, int *size, int *stat)
   }
   else
     retv = VSRPC_ERR_PROT; // protocol error
-    
+
   if (rpc->retc != 0){ vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
   return retv;
 }
@@ -1577,7 +1580,7 @@ char **vsrpc_builtin_read(vsrpc_t *rpc, int argc, char * const argv[])
 {
   int id, off, size, fmt, max, retv, step;
   char **rv;
- 
+
   // check permission
   if ((rpc->perm & VSRPC_PERM_READ) == 0)
     return vsrpc_list2argv("i", VSRPC_ERR_PERM);
@@ -1592,16 +1595,16 @@ char **vsrpc_builtin_read(vsrpc_t *rpc, int argc, char * const argv[])
   fmt = vsrpc_str2int(argv[4]);
   if (fmt < 0 || fmt > 3) return vsrpc_list2argv("i", VSRPC_ERR_BARG);
   off = vsrpc_str2int(argv[2]);
-  
+
   step = sizeof(char);
   if      (fmt == 1) step = sizeof(int);
-#ifdef VSRPC_FLOAT    
+#ifdef VSRPC_FLOAT
   else if (fmt == 2) step = sizeof(float);
   else if (fmt == 3) step = sizeof(double);
 #endif // VSRPC_FLOAT
-  if (off < 0 || 
+  if (off < 0 ||
       off >= max) return vsrpc_list2argv("i", VSRPC_ERR_BARG);
-  
+
   // prepare valid max size
   size = step * vsrpc_str2int(argv[3]);
   max -= off; // max size may read
@@ -1614,11 +1617,11 @@ char **vsrpc_builtin_read(vsrpc_t *rpc, int argc, char * const argv[])
     return vsrpc_list2argv("i", VSRPC_ERR_MEM);
   if((retv = vsrpc_return_value(rpc, rv)) != VSRPC_ERR_NONE)
     return vsrpc_list2argv("i", retv);
-  vsrpc_free_argv(rv); 
-  
+  vsrpc_free_argv(rv);
+
   // now all preparing is finish => send requested array to client
   retv = vsrpc_transmit(rpc, (void*) (rpc->mb[id].ptr + off), size, fmt, &size);
-  
+
   return vsrpc_list2argv("i", retv);
 }
 //----------------------------------------------------------------------------
@@ -1628,7 +1631,7 @@ int vsrpc_local_read(vsrpc_t *rpc,
                      int *count) // return ErrorCode
 {
   int max;
-  
+
   // check arguments
   if (id < 0 || id >= VSRPC_MB_NUM) goto err_barg;
   max = rpc->mb[id].size;
@@ -1636,7 +1639,7 @@ int vsrpc_local_read(vsrpc_t *rpc,
   if (off < 0 || off >= max) goto err_barg;
   max -= off; // max size may read
   if (size > max) size = max; // real size
- 
+
   // copy memory
   memcpy(ptr, (const void*) (rpc->mb[id].ptr + off), (size_t) size);
   *count = size;
@@ -1655,18 +1658,18 @@ int vsrpc_remote_read(vsrpc_t *rpc,
   int retv;
   vsrpc_state_t save_state;
   *count = 0;
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "siiii", "read", id, off, size, format);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // save state
   save_state = rpc->state; // VSRPC_CALL || VSRPC_CBACK
-  
+
   // wait when procedure return first result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   // first result must be vailid Cout
   if (rpc->retc == 2)
   {
@@ -1675,28 +1678,28 @@ int vsrpc_remote_read(vsrpc_t *rpc,
   }
   else
     retv = VSRPC_ERR_PROT; // protocol error
-  
+
   if (rpc->retc != 0){ vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // now all preparing is finish => receive requested array from server
   retv = vsrpc_receive(rpc, ptr, size, format, count);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // restore state
   rpc->state = save_state;
 
   // wait second result - finish mark
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   if (rpc->retc != 0)
-  { 
+  {
     retv = vsrpc_str2int(*rpc->retv);
     vsrpc_free_argv(rpc->retv); rpc->retc = 0;
   }
-  
-  return retv; 
+
+  return retv;
 }
 //----------------------------------------------------------------------------
 // write to common memory block
@@ -1709,7 +1712,7 @@ char **vsrpc_builtin_write(vsrpc_t *rpc, int argc, char * const argv[])
 {
   int id, off, size, fmt, max, retv, step;
   char **rv;
- 
+
   // check permission
   if ((rpc->perm & VSRPC_PERM_WRITE) == 0)
     return vsrpc_list2argv("i", VSRPC_ERR_PERM);
@@ -1724,16 +1727,16 @@ char **vsrpc_builtin_write(vsrpc_t *rpc, int argc, char * const argv[])
   fmt = vsrpc_str2int(argv[4]);
   if (fmt < 0 || fmt > 3) return vsrpc_list2argv("i", VSRPC_ERR_BARG);
   off = vsrpc_str2int(argv[2]);
-  
+
   step = sizeof(char);
   if      (fmt == 1) step = (sizeof(int));
-#ifdef VSRPC_FLOAT    
+#ifdef VSRPC_FLOAT
   else if (fmt == 2) step = (sizeof(float));
   else if (fmt == 3) step = (sizeof(double));
 #endif // VSRPC_FLOAT
-  if (off < 0 || 
+  if (off < 0 ||
       off >= max) return vsrpc_list2argv("i", VSRPC_ERR_BARG);
-  
+
   // prepare valid max size
   size = step * vsrpc_str2int(argv[3]);
   max -= off; // max size may read
@@ -1746,11 +1749,11 @@ char **vsrpc_builtin_write(vsrpc_t *rpc, int argc, char * const argv[])
     return vsrpc_list2argv("i", VSRPC_ERR_MEM);
   if((retv = vsrpc_return_value(rpc, rv)) != VSRPC_ERR_NONE)
     return vsrpc_list2argv("i", retv);
-  vsrpc_free_argv(rv); 
-  
+  vsrpc_free_argv(rv);
+
   // now all preparing is finish => receive requested array from client
   retv = vsrpc_receive(rpc, (void*) (rpc->mb[id].ptr + off), size, fmt, &size);
-  
+
   return vsrpc_list2argv("i", retv);
 }
 //----------------------------------------------------------------------------
@@ -1760,7 +1763,7 @@ int vsrpc_local_write(vsrpc_t *rpc,
                       int *count) // return ErrorCode
 {
   int max;
-  
+
   // check arguments
   if (id < 0 || id >= VSRPC_MB_NUM) goto err_barg;
   max = rpc->mb[id].size;
@@ -1768,7 +1771,7 @@ int vsrpc_local_write(vsrpc_t *rpc,
   if (off < 0 || off >= max) goto err_barg;
   max -= off; // max size may write
   if (size > max) size = max; // real size
- 
+
   // copy memory
   memcpy((void*) (rpc->mb[id].ptr + off), ptr, (size_t) size);
   *count = size;
@@ -1787,18 +1790,18 @@ int vsrpc_remote_write(vsrpc_t *rpc,
   int retv;
   vsrpc_state_t save_state;
   *count = 0;
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "siiii", "write", id, off, size, fmt);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // save state
   save_state = rpc->state; // VSRPC_CALL || VSRPC_CBACK
-  
+
   // wait when procedure return first result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   // first result must be vailid Cout
   if (rpc->retc == 2)
   {
@@ -1807,31 +1810,31 @@ int vsrpc_remote_write(vsrpc_t *rpc,
   }
   else
     retv = VSRPC_ERR_PROT; // protocol error
-  
+
   if (rpc->retc != 0){ vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // now all preparing is finish => send array to server
   retv = vsrpc_transmit(rpc, (void*) ptr, size, fmt, count);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // flush output pipe
   if (rpc->flush != (void (*)(int)) NULL) rpc->flush(rpc->fd_wr);
-  
+
   // restore state
   rpc->state = save_state;
 
   // wait second result - finish mark
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   if (rpc->retc != 0)
-  { 
+  {
     retv = vsrpc_str2int(*rpc->retv);
     vsrpc_free_argv(rpc->retv); rpc->retc = 0;
   }
-  
-  return retv; 
+
+  return retv;
 }
 //----------------------------------------------------------------------------
 // simple "ping"
@@ -1848,26 +1851,26 @@ int vsrpc_remote_ping(vsrpc_t *rpc, int *ack) // return ErrorCode
 {
   int retv;
   *ack = 0; // set if error
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "s", "ping");
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   // check result
   if (rpc->retc != 2)
   { // error of protocol
     if (rpc->retc != 0){ vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
     return VSRPC_ERR_PROT;
-  }    
-  
+  }
+
   retv = vsrpc_str2int(*rpc->retv);
   // check if "pong" returned
   if (strcmp(rpc->retv[1], VSRPC_PONG_KEYWORD) == 0) *ack = 1;
-  
+
   vsrpc_free_argv(rpc->retv); rpc->retc = 0;
   return retv;
 }
@@ -1879,12 +1882,15 @@ int vsrpc_remote_ping(vsrpc_t *rpc, int *ack) // return ErrorCode
 char **vsrpc_builtin_exit(vsrpc_t* rpc, int argc, char * const argv[])
 {
   int retv;
-  
+
   // check permission
   if ( (rpc->perm & VSRPC_PERM_EXIT) != 0 )
     retv = VSRPC_ERR_EXIT; // permission ok => exit from run cycle
   else
     retv = VSRPC_ERR_PERM; // permission denied
+
+  if (argc > 1)
+    rpc->exit_value = vsrpc_str2int(argv[1]);
 
   return vsrpc_list2argv("i", retv);
 }
@@ -1894,17 +1900,17 @@ int vsrpc_remote_exit(vsrpc_t *rpc, int retv) // return ErrorCode
   // call procedure on remote machine
   retv =  vsrpc_call_ex(rpc, "si", "exit", retv);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return
   retv =  vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // check result
   if (rpc->retc == 1)
     retv = vsrpc_str2int(*rpc->retv);
-  else 
+  else
     retv = VSRPC_ERR_PROT; // protocol error
-  
+
   if (rpc->retc != 0){ vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
   return retv;
 }
@@ -1926,24 +1932,24 @@ int vsrpc_local_help(vsrpc_t *rpc, char ***list) // return VSRPC_ERR_NONE
   vsrpc_func_t *fn;
   int argc = 0; // number of builtin functions
   char **argv; // return list
-  
+
   // count builtin functions
   if (rpc->bfunc != NULL)
     for (fn = rpc->bfunc, argc = 0; fn->fname != (char*) NULL; fn++)
       argc++;
-  
+
   // allocate memory for output list
   argv = (char**) vsrpc_malloc ((argc + 1) * (int)sizeof(char*));
-  
+
   // store pointer to output list
   *list = argv;
-  
+
   // fill list
   if (rpc->bfunc != NULL)
     for (fn = rpc->bfunc; fn->fname != (char*) NULL; fn++)
       *argv++ = vsrpc_str2str(fn->fname);
   *argv = (char*) NULL;
-  
+
   return VSRPC_ERR_NONE;
 }
 //----------------------------------------------------------------------------
@@ -1952,28 +1958,28 @@ int vsrpc_remote_help(vsrpc_t *rpc, char ***list) // return ErrorCode
   int retv;
   char **argv, **p;
   *list = (char**) NULL;
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "s", "help");
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   if (rpc->retc == 0) return VSRPC_ERR_NONE; // return NULL
-  
+
   // allocate memory for output list
   argv = (char**) vsrpc_malloc ((rpc->retc + 1) * (int)sizeof(char*));
-  
+
   // store pointer to output list
   *list = argv;
-  
+
   // copy list to user
   for (p = rpc->retv; *p != (char*) NULL; p++)
     *argv++ = vsrpc_str2str(*p);
   *argv = (char*) NULL;
-  
+
   vsrpc_free_argv(rpc->retv);
   rpc->retc = 0;
   return VSRPC_ERR_NONE;
@@ -1995,24 +2001,24 @@ int vsrpc_local_list(vsrpc_t *rpc, char ***list) // return VSRPC_ERR_NONE
   vsrpc_func_t *fn;
   int argc = 0; // number of user-defined functions
   char **argv; // return list
-  
+
   // count user-defined functions
   if (rpc->func != NULL)
     for (fn = rpc->func, argc = 0; fn->fname != (char*) NULL; fn++)
       argc++;
-  
+
   // allocate memory for output list
   argv = (char**) vsrpc_malloc((argc + 1) * (int)sizeof(char*));
-  
+
   // store pointer to output list
   *list = argv;
-  
+
   // fill list
   if (rpc->func != NULL)
     for (fn = rpc->func; fn->fname != (char*) NULL; fn++)
       *argv++ = vsrpc_str2str(fn->fname);
   *argv = (char*) NULL;
-  
+
   return VSRPC_ERR_NONE;
 }
 //----------------------------------------------------------------------------
@@ -2021,35 +2027,35 @@ int vsrpc_remote_list(vsrpc_t *rpc, char ***list) // return ErrorCode
   int retv;
   char **argv, **p;
   *list = (char**) NULL;
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "s", "list");
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   if (rpc->retc == 0) return VSRPC_ERR_NONE; // return NULL
-  
+
   // allocate memory for output list
   argv = (char**) vsrpc_malloc ((rpc->retc + 1) * (int)sizeof(char*));
-  
+
   // store pointer to output list
   *list = argv;
-  
+
   // copy list to user
   for (p = rpc->retv; *p != (char*) NULL; p++)
     *argv++ = vsrpc_str2str(*p);
   *argv = (char*) NULL;
-  
+
   vsrpc_free_argv(rpc->retv);
   rpc->retc = 0;
   return VSRPC_ERR_NONE;
 }
 #endif // VSRPC_HELP
 //----------------------------------------------------------------------------
-// get version of protocol 
+// get version of protocol
 //    input: Nothing
 //   return: ErrorCode "version"
 //   errors: VSRPC_ERR_NONE
@@ -2067,15 +2073,15 @@ int vsrpc_local_version(vsrpc_t *rpc, char **ver) // VSRPC_ERR_NONE
 int vsrpc_remote_version(vsrpc_t *rpc, char **ver) // return ErrorCode
 {
   int retv;
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "s", "version");
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   // check result
   if (rpc->retc == 2)
   {
@@ -2087,7 +2093,7 @@ int vsrpc_remote_version(vsrpc_t *rpc, char **ver) // return ErrorCode
     *ver = vsrpc_str2str("unknown");
     retv = VSRPC_ERR_PROT; // protocol error
   }
-  
+
   if (rpc->retc != 0) { vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
   return retv;
 }
@@ -2104,19 +2110,19 @@ int vsrpc_check_version(vsrpc_t *rpc, int *ok)
 
   retv = vsrpc_local_version(rpc, &local_ver);
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   retv = vsrpc_remote_version(rpc, &remote_ver);
   if (retv != VSRPC_ERR_NONE)
   {
     vsrpc_free(local_ver);
     return retv;
   }
-  
+
   if (strcmp(local_ver, remote_ver) == 0)
     *ok = 1; // good version
   else
     *ok = 0; // bad version
-  
+
   vsrpc_free(local_ver);
   vsrpc_free(remote_ver);
   return VSRPC_ERR_NONE;
@@ -2140,15 +2146,15 @@ int vsrpc_local_perm(vsrpc_t *rpc, int *perm) // return VSRPC_ERR_NONE
 int vsrpc_remote_perm(vsrpc_t *rpc, int *perm) // return ErrorCode
 {
   int retv;
-  
+
   // call procedure on remote machine
   retv = vsrpc_call_ex(rpc, "s", "perm");
   if (retv != VSRPC_ERR_NONE) return retv;
-  
+
   // wait when procedure return result
   retv = vsrpc_wait(rpc);
   if (retv != VSRPC_ERR_NONE) return retv;
- 
+
   // check result
   if (rpc->retc == 2)
   {
@@ -2160,7 +2166,7 @@ int vsrpc_remote_perm(vsrpc_t *rpc, int *perm) // return ErrorCode
     *perm = 0;
     retv = VSRPC_ERR_PROT; // protocol error
   }
-  
+
   if (rpc->retc != 0) { vsrpc_free_argv(rpc->retv); rpc->retc = 0; }
   return retv;
 }

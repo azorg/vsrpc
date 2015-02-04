@@ -28,7 +28,7 @@ int vssem_init(vssem_t * sem, int pshared, unsigned int value)
   return 0;
 #else
   return sem_init(&(sem->pth_sem), pshared, value);
-#endif     
+#endif
 }
 //----------------------------------------------------------------------------
 // destroy semaphore object
@@ -45,7 +45,7 @@ int vssem_destroy(vssem_t * sem)
     return 0;
 #else
   return sem_destroy(&(sem->pth_sem));
-#endif     
+#endif
 }
 //----------------------------------------------------------------------------
 // blocking decrement semaphore
@@ -63,7 +63,7 @@ int vssem_wait(vssem_t * sem)
   return 0;
 #else
   return sem_wait(&(sem->pth_sem));
-#endif     
+#endif
 }
 //----------------------------------------------------------------------------
 // non-blocking decrement semaphore
@@ -83,7 +83,7 @@ int vssem_trywait(vssem_t * sem)
   return 0;
 #else
   return sem_trywait(&(sem->pth_sem));
-#endif     
+#endif
 }
 //----------------------------------------------------------------------------
 // increment semaphore
@@ -100,7 +100,7 @@ int vssem_post(vssem_t * sem)
   return 0;
 #else
   return sem_post(&(sem->pth_sem));
-#endif     
+#endif
 }
 //----------------------------------------------------------------------------
 #ifdef VSWIN32
@@ -116,7 +116,7 @@ int WINAPI NtQuerySemaphore(
   int InfoSize,
   int *RetLen
 );
-#endif     
+#endif
 //----------------------------------------------------------------------------
 // get value of semaphore
 int vssem_getvalue(vssem_t * sem, int *sval)
@@ -145,7 +145,7 @@ int vssem_getvalue(vssem_t * sem, int *sval)
   }
 #else
   return sem_getvalue(&(sem->pth_sem), sval);
-#endif     
+#endif
 }
 //----------------------------------------------------------------------------
 // create mutex object

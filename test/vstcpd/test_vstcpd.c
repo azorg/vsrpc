@@ -26,14 +26,35 @@ char **def_fn(vsrpc_t *rpc, int argc, char * const argv[])
   return NULL;
 }
 //----------------------------------------------------------------------------
+// on foreach exit function
+void foreach_exit(
+  int fd,                // socket
+  unsigned ipaddr,       // client IPv4 address
+  void *client_context,  // client context
+  void *server_context,  // server context
+  void *foreach_context, // optional context
+  int client_index,      // client index (< client_count)
+  int client_count)      // client count
+{
+  int retv = *((int*) foreach_context);
+  vstcpd_client_t *pc = (vstcpd_client_t*) client_context;
+
+  printf(">>> call vsrpc_remote_exit(%i) to client %i of %i",
+         retv, client_index, client_count);
+
+  retv = vsrpc_remote_exit(&pc->rpc, retv);
+
+  printf(", return %i\n", retv);
+}
+//----------------------------------------------------------------------------
 int main()
 {
-  int port;
+  int port, exit_code;
   sl_init();
 
   printf("\npress ENTER to start\n");
   fgetc(stdin);
-  
+
   printf("\nvstcpd_start()\n");
 
   for (port = PORT; port < (PORT + PORT_NUM); port++)
@@ -59,15 +80,22 @@ int main()
   else
     printf(">>> TCP server start on %i port\n", port);
 
+#if 1
+  printf("press ENTER to say exit to all clients\n");
+  fgetc(stdin);
+  exit_code = 12345;
+  vstcps_foreach(&serv.tcps, &exit_code, foreach_exit);
+#endif
+
   printf("press ENTER to stop\n");
   fgetc(stdin);
-  
+
   printf("\nvstcpd_stop()\n");
   vstcpd_stop(&serv);
-  
+
   printf("press ENTER to exit\n");
   fgetc(stdin);
-    
+
   return 0;
 }
 //----------------------------------------------------------------------------

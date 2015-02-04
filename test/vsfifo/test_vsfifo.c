@@ -18,14 +18,14 @@ vsfifo_t *fifo;
 void *thread()
 {
   int buf;
-  
+
   while (1)
   {
     int ret;
-    
+
     ret = vsfifo_read(fifo, (void *)&buf, sizeof(buf));
-    
-    printf("vsfifo_read: ret=%i data=0x%X\n", ret, buf);    
+
+    printf("vsfifo_read: ret=%i data=0x%X\n", ret, buf);
   }
 }
 //----------------------------------------------------------------------------
@@ -50,9 +50,9 @@ int main()
     printf("vsfifo_init error\n");
     return 1;
   }
-  
+
   vsfifo_clear(fifo);
-  
+
 #ifdef VSTHREAD_POOL
   vsthread_create(&pool, &thr, thread, NULL);
 #else
@@ -63,17 +63,17 @@ int main()
   printf("press ENTER to write to fifo %i bytes (0x%X)\n",
          (int) sizeof(ret), ret);
   fgetc(stdin);
-  
+
   vsfifo_write(fifo, &ret, sizeof(ret));
-  
+
   printf("press ENTER to stop\n");
   fgetc(stdin);
-  
+
   vsfifo_release(fifo);
-  
+
   printf("press ENTER to exit\n");
   fgetc(stdin);
-    
+
   return 0;
 }
 //----------------------------------------------------------------------------

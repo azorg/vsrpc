@@ -31,7 +31,7 @@ typedef struct
 #ifdef VSWIN32
   HANDLE win_sem;
 #else
-  sem_t pth_sem; 
+  sem_t pth_sem;
 #endif
 }
 vssem_t;

@@ -94,7 +94,7 @@
 #define VSRPC_ERR_EXIT  -13 // client call "exit" => goodbye
 
 #define VSRPC_ERROR_NUM        15          // look vsrpc_error_str() code
-#define VSRPC_ERROR_INDEX(err) (1 - (err)) // 
+#define VSRPC_ERROR_INDEX(err) (1 - (err)) //
 
 // permissions flags
 #define VSRPC_PERM_READ   (1<<0) // read memory from server
@@ -105,7 +105,7 @@
 #define VSRPC_PERM_CALL   (1<<5) // call user-defined functions
 #define VSRPC_PERM_CDEF   (1<<6) // call default function
 #define VSRPC_PERM_CBACK  (1<<7) // callback procedure from server
-//#define VSRPC_PERM_EXEC (1<<7) // execute another program 
+//#define VSRPC_PERM_EXEC (1<<7) // execute another program
 
 // "default" permissions (must be "safe")
 #define VSRPC_PERM_DEFAULT \
@@ -166,11 +166,11 @@ struct vsrpc_ {
   int inbuf_max_size;  // max size of inbuf (else return VSRPC_ERR_OVER)
   int inbuf_cnt;       // inbuf received bytes (inbuf_cnt <= inbuf_size)
   int inbuf_len;       // inbuf length of message (inbuf_len <= inbuf_cnt)
- 
+
   // file descriptors for "low layer"
   int fd_rd; // for read() and select() functions
   int fd_wr; // for write() and flush() functions
-  
+
   // external function ("low layer")
   // This function like read and write (man read; man write),
   // but this function must return:
@@ -180,6 +180,9 @@ struct vsrpc_ {
   int (*write) (int fd, const void* buf, int size); // write to pipe func.
   int (*select)(int fd, int msec); // check input pipe for nonblock read (or NULL)
   void (*flush)(int fd); // flush output pipe (or NULL)
+
+  // exit code if another side say `exit code`
+  int exit_value;
 };
 //----------------------------------------------------------------------------
 #ifdef __cplusplus
@@ -188,21 +191,21 @@ extern "C" {
 //----------------------------------------------------------------------------
 // allocate memory (return NULL on failure)
 VSRPC_INLINE char *vsrpc_malloc(int size)
-{
-  return (char*) malloc((size_t) size);
-}
+{ return (char*) malloc((size_t) size); }
 //----------------------------------------------------------------------------
 // free memory
 VSRPC_INLINE void vsrpc_free(char *ptr)
-{ 
-  free((void*) ptr); 
-}
+{ free((void*) ptr); }
+//----------------------------------------------------------------------------
+// get last exit code
+VSRPC_INLINE int vsrpc_exit_value(vsrpc_t *rpc)
+{ return rpc->exit_value; }
 //----------------------------------------------------------------------------
 // return VSRPC error string
 const char *vsrpc_error_str(int err);
 //----------------------------------------------------------------------------
 // reallocate memory (return NULL on failure)
-//char *vsrpc_realloc(char *old, int old_size, int new_size); 
+//char *vsrpc_realloc(char *old, int old_size, int new_size);
 //----------------------------------------------------------------------------
 // init function
 // return ErrorCode
@@ -479,7 +482,7 @@ int vsrpc_local_list(vsrpc_t *rpc, char ***list); // return VSRPC_ERR_NONE
 int vsrpc_remote_list(vsrpc_t *rpc, char ***list); // return ErrorCode
 #endif // VSRPC_HELP
 //----------------------------------------------------------------------------
-// get version of protocol 
+// get version of protocol
 //    input: Nothing
 //   return: ErrorCode "version"
 //   errors: VSRPC_ERR_NONE

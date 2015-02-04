@@ -26,7 +26,7 @@ static int vstcpd_on_accept(
 
   VSTCPD_DBG("vstcpd_on_accept(fd=%i, IP=%s, count=%i) start",
              fd, sl_inet_ntoa(ipaddr), count);
-  
+
   if (pc == NULL)
   {
     VSTCPD_DBG("ooops; malloc() return NULL: reject connection");
@@ -35,7 +35,7 @@ static int vstcpd_on_accept(
 
   vsmutex_init(&pc->mtx_fd);
   pc->server = ps;
-  pc->context = NULL;
+  pc->context = NULL; // FIXME (unused yet)
   *client_context = pc;
 
   if (ps->on_accept != NULL)
@@ -83,14 +83,14 @@ static void vstcpd_on_connect(
     sl_write,              // write() function
     sl_select,             // select() function
     (void (*)(int)) NULL); // flush() function
-  
+
   if (retv != VSRPC_ERR_NONE)
   {
     VSTCPD_DBG("ooops; can't init VSRPC: vsrpc_init() return %i)", retv);
     VSTCPD_DBG("vstcpd_on_connect() finish");
     return;
   }
-  
+
   while (1)
   {
     // wait request from client side
@@ -102,34 +102,34 @@ static void vstcpd_on_connect(
       VSTCPD_DBG("sl_select(fd=%i, timeout=%i) return 0 (false)",
                  fd, VSTCPD_SELECT_TIMEOUT);
     }
-    
+
     VSTCPD_DBG("sl_select(fd=%i, timeout=%i) return %i: '%s'",
                fd, VSTCPD_SELECT_TIMEOUT, retv,
                retv < 0 ? sl_error_str(retv) : (retv ? "true" : "false"));
 
     vsmutex_lock(&pc->mtx_fd);
-    
+
     if (retv < 0)
        break; // close connection
-    
+
     // allow run 1 procedure on server
     retv = vsrpc_run(&pc->rpc);
-    
+
     VSTCPD_DBG("vsrpc_run() return %i: '%s'", retv, vsrpc_error_str(retv));
-    
+
     // check VSRPC return value
     if (retv != VSRPC_ERR_EMPTY &&
         retv != VSRPC_ERR_NONE  &&
         retv != VSRPC_ERR_RET   &&
         retv != VSRPC_ERR_FNF) break; // close connection
-  
+
     vsmutex_unlock(&pc->mtx_fd);
   } // while (1)
 
   vsmutex_unlock(&pc->mtx_fd);
 
   vsrpc_release(&pc->rpc); // stop VSRPC
-  
+
   VSTCPD_DBG("vstcpd_on_connect() finish");
 }
 //----------------------------------------------------------------------------
@@ -197,12 +197,12 @@ int vstcpd_start(
   int priority, int sched)     // POSIX threads attributes
 {
   int retv;
-  
+
 #ifdef VSTCPD_DEBUG
   if (rpc_def_func == (char** (*)(vsrpc_t*, int, char *const[])) NULL)
      rpc_def_func = vstcpd_def_func_debug;
 #endif
-    
+
   VSTCPD_DBG("vstcpd_start(host=%s, port=%i, max_clients=%i) start",
              host, port, max_clients);
 
@@ -225,10 +225,10 @@ int vstcpd_start(
     vstcpd_on_connect,    // on connect callback function
     vstcpd_on_disconnect, // on disconnect callback function
     priority, sched);     // POSIX threads attributes
-  
+
   if (retv != VSTCPS_ERR_NONE)
     VSTCPD_DBG("ooops; can't create server: vstcps_start() return %i", retv);
-  
+
   VSTCPD_DBG("vstcpd_start() finish");
 
   return retv;
@@ -267,7 +267,7 @@ static void vstcpd_on_foreach(
   vsmutex_lock(&pc->mtx_fd);
   err = vsrpc_call(&pc->rpc, pf->argv); // call procedure on remote machine
   vsmutex_unlock(&pc->mtx_fd);
-  
+
   if (err == VSRPC_ERR_NONE) pf->count++; // count of sent messages
 }
 //----------------------------------------------------------------------------
@@ -299,11 +299,11 @@ int vstcpd_broadcast_ex(
   if (list == NULL) return -1; // some check
   argc = strlen(list); // very easy!
   if (argc == 0) return -1; // check argument
-  
+
   // malloc argv array
   argv = (char**) vsrpc_malloc ((argc + 1) * (int)sizeof(char*));
   if (argv == NULL) return -1; // memory exeption
-  
+
   va_start(ap, list);
   for (i = 0; i < argc; i++)
   {
@@ -311,7 +311,7 @@ int vstcpd_broadcast_ex(
     if      (c == 's') s = vsrpc_str2str(va_arg(ap, char*));
     else if (c == 'i') s = vsrpc_int2str(va_arg(ap, int));
 #ifdef VSRPC_FLOAT
-    else if (c == 'f') s = vsrpc_float2str((float)va_arg(ap, double)); //!!!
+    else if (c == 'f') s = vsrpc_float2str((float)va_arg(ap, double));
     else if (c == 'd') s = vsrpc_double2str(va_arg(ap, double));
 #endif // VSRPC_FLOAT
     else s = "";
@@ -319,10 +319,10 @@ int vstcpd_broadcast_ex(
   }
   argv[argc] = NULL; // place to end
   va_end(ap);
-  
+
   // send procedure name and argument(s) to all remote machines (clients)
   i = vstcpd_broadcast(server, exclude, argv);
-  
+
   // free memory from argument list
   vsrpc_free_argv(argv);
   return i;
