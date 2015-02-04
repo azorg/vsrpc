@@ -14,7 +14,7 @@
 // select default timeout [ms] (-1 : infinite)
 #ifndef VSTCPD_SELECT_TIMEOUT
 //#  define VSTCPD_SELECT_TIMEOUT -1
-#  define VSTCPD_SELECT_TIMEOUT 3000
+#  define VSTCPD_SELECT_TIMEOUT 10000 // 10 sec
 #endif
 //----------------------------------------------------------------------------
 // include debuging output
@@ -120,7 +120,7 @@ void vstcpd_stop(
 // broadcast procedures call on all clients
 int vstcpd_broadcast(
   vstcpd_t *server,   // pointer to VSTCPD object
-  void *exclude,      // exclude this client (by client context)
+  void *exclude,      // exclude this client (vstcpd_client_t*) or NULL
   char * const argv[] // function name and arguments
 );
 //----------------------------------------------------------------------------
@@ -128,9 +128,25 @@ int vstcpd_broadcast(
 // list: s-string, i-integer, f-float, d-double
 int vstcpd_broadcast_ex(
   vstcpd_t *server, // pointer to VSTCPD object
-  void *exclude,    // exclude this client (by client context)
+  void *exclude,    // exclude this client (vstcpd_client_t*) or NULL
   const char *list, // list of argumets type (begin with 's' - function name)
   ...               // function name and arguments
+);
+//----------------------------------------------------------------------------
+// exchange for each client
+// (return number of connected clients)
+int vstcpd_foreach(
+  vstcpd_t *server,       // pointer to VSTCPS object
+  void *foreach_context,  // pointer to optional context or NULL
+
+  void (*on_foreach)(     // on foreach callback function
+    vsrpc_t *rpc,            // pointer to VSRPC structure
+    unsigned ipaddr,         // client IPv4 address
+    void *client_context,    // client context
+    void *server_context,    // server context
+    void *foreach_context,   // optional context
+    int client_index,        // client index (< client_count)
+    int client_count)        // client count
 );
 //----------------------------------------------------------------------------
 #ifdef __cplusplus

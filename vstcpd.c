@@ -35,7 +35,7 @@ static int vstcpd_on_accept(
 
   vsmutex_init(&pc->mtx_fd);
   pc->server = ps;
-  pc->context = NULL; // FIXME (unused yet)
+  pc->context = NULL;
   *client_context = pc;
 
   if (ps->on_accept != NULL)
@@ -77,7 +77,7 @@ static void vstcpd_on_connect(
     ps->func,              // user functions or NULL
     ps->def_func,          // default function or NULL
     ps->perm,              // permissions
-    pc->context,           // client context
+    pc,                    // pointer to client struct (vstcpd_client_t)
     fd, fd,                // read and write file descriptor (socket)
     sl_read,               // read() function
     sl_write,              // write() function
@@ -116,6 +116,16 @@ static void vstcpd_on_connect(
     retv = vsrpc_run(&pc->rpc);
 
     VSTCPD_DBG("vsrpc_run() return %i: '%s'", retv, vsrpc_error_str(retv));
+
+    if (retv == VSRPC_ERR_EXIT)
+    {
+      if (pc->rpc.retc > 0)
+        VSTCPD_DBG("client say exit(%i), disconnect",
+                   vsrpc_exit_value(&pc->rpc));
+      else
+        VSTCPD_DBG("client say exit(), disconnect");
+      break; // clode connection
+    }
 
     // check VSRPC return value
     if (retv != VSRPC_ERR_EMPTY &&
@@ -245,51 +255,51 @@ typedef struct {
   int count;
   char * const * argv;
   void *exclude;
-} vstcpd_foreach_t;
+} vstcpd_broadcast_t;
 //----------------------------------------------------------------------------
 // on exchange callback function
-static void vstcpd_on_foreach(
+static void vstcpd_on_broadcast(
   int fd,                // socket
   unsigned ipaddr,       // client IPv4 address
-  void *client_context,  // client context
-  void *server_context,  // server context
-  void *foreach_context, // optional context
+  void *client_context,  // client context (vstcpd_client_t*)
+  void *server_context,  // server context (vstcpd_t*)
+  void *foreach_context, // optional context (vstcpd_broadcast_t*)
   int client_index,      // client index (< client_count)
   int client_count)      // client count
 {
-  vstcpd_foreach_t *pf = (vstcpd_foreach_t*) foreach_context;
   vstcpd_client_t *pc = (vstcpd_client_t*) client_context;
+  vstcpd_broadcast_t *pb = (vstcpd_broadcast_t*) foreach_context;
   int err;
 
-  if (pc->context == pf->exclude)
+  if ((void*) pc == pb->exclude)
     return;
 
   vsmutex_lock(&pc->mtx_fd);
-  err = vsrpc_call(&pc->rpc, pf->argv); // call procedure on remote machine
+  err = vsrpc_call(&pc->rpc, pb->argv); // call procedure on remote machine
   vsmutex_unlock(&pc->mtx_fd);
 
-  if (err == VSRPC_ERR_NONE) pf->count++; // count of sent messages
+  if (err == VSRPC_ERR_NONE) pb->count++; // count of sent messages
 }
 //----------------------------------------------------------------------------
 // broadcast procedures call on all clients
 int vstcpd_broadcast(
   vstcpd_t *server,    // pointer to VSTCPD object
-  void *exclude,       // exclude this client (by client context)
+  void *exclude,       // exclude this client (vstcpd_client_t*) or NULL
   char * const argv[]) // function name and arguments
 {
-  vstcpd_foreach_t fe;
-  fe.count = 0;
-  fe.argv = argv;
-  fe.exclude = exclude;
-  vstcps_foreach(&server->tcps, &fe, vstcpd_on_foreach);
-  return fe.count;
+  vstcpd_broadcast_t b;
+  b.count = 0;
+  b.argv = argv;
+  b.exclude = exclude;
+  vstcps_foreach(&server->tcps, (void*) &b, vstcpd_on_broadcast);
+  return b.count;
 }
 //----------------------------------------------------------------------------
 // broadcast procedures call on all clients with "friendly" interface
 // list: s-string, i-integer, f-float, d-double
 int vstcpd_broadcast_ex(
   vstcpd_t *server, // pointer to VSTCPD object
-  void *exclude,    // exclude this client (by client context)
+  void *exclude,    // exclude this client (vstcpd_client_t*) or NULL
   const char *list, // list of argumets type (begin with 's' - function name)
   ...)              // function name and arguments
 {
@@ -326,6 +336,74 @@ int vstcpd_broadcast_ex(
   // free memory from argument list
   vsrpc_free_argv(argv);
   return i;
+}
+//----------------------------------------------------------------------------
+typedef struct {
+  int count;
+  void *context;
+  void (*on_foreach)(     // on foreach callback function
+    vsrpc_t *rpc,            // pointer to VSRPC structure
+    unsigned ipaddr,         // client IPv4 address
+    void *client_context,    // client context
+    void *server_context,    // server context
+    void *foreach_context,   // optional context
+    int client_index,        // client index (< client_count)
+    int client_count);       // client count
+} vstcpd_foreach_t;
+//----------------------------------------------------------------------------
+static void vstcpd_on_foreach( // on foreach callback function
+    int fd,                  // socket
+    unsigned ipaddr,         // client IPv4 address
+    void *client_context,    // client context
+    void *server_context,    // server context
+    void *foreach_context,   // optional context
+    int client_index,        // client index (< client_count)
+    int client_count)        // client count
+{
+  vstcpd_client_t *pc = (vstcpd_client_t*) client_context;
+  vstcpd_t *ps = (vstcpd_t*) server_context;
+  vstcpd_foreach_t *pf = (vstcpd_foreach_t*) foreach_context;
+
+  vsmutex_lock(&pc->mtx_fd);
+
+  pf->on_foreach(
+    &pc->rpc,      // pointer to VSRPC structure
+    ipaddr,        // client IPv4 address
+    pc->context,   // client context
+    ps->context,   // server context
+    pf->context,   // optional context
+    client_index,  // client index (< client_count)
+    client_count); // client count
+
+  pf->count++;
+
+  vsmutex_unlock(&pc->mtx_fd);
+}
+//----------------------------------------------------------------------------
+// exchange for each client
+// (return number of connected clients)
+int vstcpd_foreach(
+  vstcpd_t *server,       // pointer to VSTCPS object
+  void *foreach_context,  // pointer to optional context or NULL
+
+  void (*on_foreach)(     // on foreach callback function
+    vsrpc_t *rpc,            // pointer to VSRPC structure
+    unsigned ipaddr,         // client IPv4 address
+    void *client_context,    // client context
+    void *server_context,    // server context
+    void *foreach_context,   // optional context
+    int client_index,        // client index (< client_count)
+    int client_count))       // client count
+{
+  vstcpd_foreach_t fe;
+  fe.count = 0;;
+  fe.on_foreach = on_foreach;
+  fe.context = foreach_context;
+
+  return vstcps_foreach(
+           &server->tcps,      // pointer to VSTCPS object
+           &fe,                // pointer to optional context or NULL
+           vstcpd_on_foreach); // on foreach callback function
 }
 //----------------------------------------------------------------------------
 
