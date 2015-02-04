@@ -92,7 +92,7 @@ int sl_disconnect(int fd);
 // accept wrapper (return file descriptor or -1 on error)
 int sl_accept(int server_socket, unsigned *ipaddr);
 //----------------------------------------------------------------------------
-// select wraper for non block read (return 0:false, 1:true, < 0:error code)
+// select wraper for non block read (return 0:false, 1:true, <0:error code)
 int sl_select(int fd, int msec);
 //----------------------------------------------------------------------------
 // fuse select wraper (always return 1)

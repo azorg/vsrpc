@@ -268,7 +268,7 @@ int sl_accept(int server_socket, unsigned *ipaddr)
   } // while(1)
 }
 //----------------------------------------------------------------------------
-// select wraper for non block read (return 0:false, 1:true, < 0:error code)
+// select wraper for non block read (return 0:false, 1:true, <0:error code)
 int sl_select(int fd, int msec)
 {
 #ifdef SL_USE_POLL

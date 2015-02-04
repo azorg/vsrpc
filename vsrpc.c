@@ -505,9 +505,13 @@ int vsrpc_wait(vsrpc_t *rpc)
 // return {1:true, 0:false, -1:error}
 int vsrpc_select(vsrpc_t *rpc, int msec)
 {
+  int i;
   if (rpc->inbuf_cnt > rpc->inbuf_len) return 1;
   if (rpc->select == (int (*)(int, int)) NULL) return 1;
-  return rpc->select(rpc->fd_rd, msec); // check for nonblock read
+  i = rpc->select(rpc->fd_rd, msec); // check for nonblock read
+  if (i < 0) return -1; // error
+  if (i > 0) return 1;  // true
+  return 0;             // false
 }
 //----------------------------------------------------------------------------
 // read from pipe (may be read from input bufer)
