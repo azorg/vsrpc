@@ -11,6 +11,8 @@ SRCS := \
 	../../vstcpc.c \
         client/rpc_remote.c \
         client/rpc_client.c \
+        server/lrpc_local.c \
+        server/lrpc_server.c \
         test_vstcpc.c
 
 HDRS := \
@@ -21,7 +23,9 @@ HDRS := \
 	../../vstcpc.h \
         client/rpc_remote.h \
         client/rpc_client.h \
-        client/rpc_client_dbg.h
+        client/rpc_client_dbg.h \
+        server/lrpc_local.h \
+        server/lrpc_server.h \
 
 # 2-nd way to select source files
 #SRC_DIRS := . ../.. client ../../socklib

@@ -6,6 +6,13 @@
   --fn-prefix      rpc_ \
   --remote-suffix  _remote
 
+../../vsrpc_idl.sh \
+  --input-file lrpc.vsidl \
+  --server-out-dir server \
+  --fn-prefix      lrpc_ \
+  --remote-suffix  _remote \
+  --remote-suffix  _local
+
 test `uname` = Linux && OPT='-j4'
 make ${OPT}
 

@@ -26,6 +26,7 @@ char **def_fn(vsrpc_t *rpc, int argc, char * const argv[])
   return NULL;
 }
 //----------------------------------------------------------------------------
+#if 0
 // on foreach exit function via VSTCPS level
 static void foreach_exit1(
   int fd,                // socket
@@ -48,8 +49,9 @@ static void foreach_exit1(
 
   printf(", return %i\n", retv);
 }
+#endif
 //----------------------------------------------------------------------------
-// on foreach exit function via VSTCPS level
+// on foreach exit function via VSTCPD level
 static void foreach_exit2(
   vsrpc_t *rpc,            // pointer to VSRPC structure
   unsigned ipaddr,         // client IPv4 address

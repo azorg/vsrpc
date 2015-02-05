@@ -10,10 +10,21 @@
 #include "vstcpc.h"
 #include "rpc_remote.h"
 #include "rpc_client.h"
+#include "lrpc_server.h"
 //----------------------------------------------------------------------------
 #define HOST "127.0.0.1"
 //#define HOST "192.168.7.177"
 #define PORT 7777
+//----------------------------------------------------------------------------
+char **def_fn(vsrpc_t *rpc, int argc, char * const argv[])
+{
+  int i;
+  printf("def_fn: %s", argv[0]);
+  for (i = 1; i < argc; i++)
+    printf(" %s", argv[i]);
+  printf("\n");
+  return NULL;
+}
 //----------------------------------------------------------------------------
 double get_time()
 {
@@ -52,7 +63,8 @@ int main()
   fgetc(stdin);
 
   printf("vstcpc_start()\n");
-  if ((i = vstcpc_start(&obj, NULL, NULL, VSRPC_PERM_DEFAULT, HOST, PORT,
+  if ((i = vstcpc_start(&obj, lrpc_vsrpc_func, def_fn,
+                        VSRPC_PERM_DEFAULT, HOST, PORT,
                         priority, SCHED_FIFO)) != 0)
   {
     fprintf(stderr, "vstcpc_start() return %i\n", i);

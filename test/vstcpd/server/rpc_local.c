@@ -6,6 +6,7 @@
  */
 //----------------------------------------------------------------------------
 #include "vsrpc.h"
+#include "vstcpd.h"
 //----------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +27,7 @@ void rpc_test(vsrpc_t *rpc, int size)
   // read from pipe
   i = vsrpc_read(rpc, (char*) buf, size * sizeof(int));
   if (i != VSRPC_ERR_NONE)
-		printf("\n>>> vsrpc_read() error %i: '%s'\n", i, vsrpc_error_str(i));
+    printf("\n>>> vsrpc_read() error %i: '%s'\n", i, vsrpc_error_str(i));
   
   // modify data
   for (i = 0; i < size; i++)
@@ -35,7 +36,7 @@ void rpc_test(vsrpc_t *rpc, int size)
   // return data to pipe
   i = vsrpc_write(rpc, (const char*) buf, size * sizeof(int));
   if (i != VSRPC_ERR_NONE)
-		printf("\n>>> vsrpc_write() error %i: '%s'\n", i, vsrpc_error_str(i));
+    printf("\n>>> vsrpc_write() error %i: '%s'\n", i, vsrpc_error_str(i));
 }
 //----------------------------------------------------------------------------
 void rpc_cap(vsrpc_t* rpc)
@@ -74,5 +75,17 @@ void rpc_loop(vsrpc_t* rpc)
 {
   // loop forever
   while (1);
+}
+//----------------------------------------------------------------------------
+void rpc_toall(vsrpc_t* rpc, char* str)
+{ // send message to all another clients
+  vstcpd_client_t *pc = (vstcpd_client_t*) rpc->context;
+  vstcpd_t *ps = pc->server;
+
+  vstcpd_broadcast_ex(
+    ps,            // pointer to VSTCPD object
+    pc,            // exclude this client (vstcpd_client_t*) or NULL
+    "ss",          // list of argumets type (begin with 's' - function name)
+    "msg", "hi!"); // function name and arguments
 }
 //----------------------------------------------------------------------------
