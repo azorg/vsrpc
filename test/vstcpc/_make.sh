@@ -13,6 +13,6 @@
   --remote-suffix  _remote \
   --remote-suffix  _local
 
-test `uname` = Linux && OPT='-j4'
+test `uname` = Linux && OPT='-j4' || OPT='WIN32=1'
 make ${OPT}
 

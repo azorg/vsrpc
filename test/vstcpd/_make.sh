@@ -5,6 +5,6 @@
   --server-out-dir server \
   --fn-prefix rpc_
 
-test `uname` = Linux && OPT='-j4'
+test `uname` = Linux && OPT='-j4' || OPT='WIN32=1'
 make ${OPT}
 
