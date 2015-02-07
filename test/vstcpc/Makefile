@@ -5,6 +5,7 @@ OUT_DIR      := .
 # 1-st way to select source files
 SRCS := \
 	../../socklib/socklib.c \
+	../../vsgettime/vsgettime.c \
 	../../vsrpc.c \
 	../../vssync.c \
 	../../vsthread.c \
@@ -17,6 +18,7 @@ SRCS := \
 
 HDRS := \
 	../../socklib/socklib.h \
+	../../vsgettime/vsgettime.h \
 	../../vsrpc.h \
 	../../vssync.h \
 	../../vsthread.h \
@@ -28,8 +30,8 @@ HDRS := \
         server/lrpc_server.h \
 
 # 2-nd way to select source files
-#SRC_DIRS := . ../.. client ../../socklib
-#HDR_DIRS := . ../.. client ../../socklib
+#SRC_DIRS := . ../.. client ../../socklib ../../vsgettime
+#HDR_DIRS := . ../.. client ../../socklib ../../vsgettime
 #----------------------------------------------------------------------------
 #OPTIM := -g -O0
 OPTIM := -Os

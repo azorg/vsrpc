@@ -379,11 +379,11 @@ ${hr}
 ${hr}
 double get_time()
 {
-  struct timespec tv;
+  struct timespec ts;
   double t;
-  clock_gettime(CLOCK_REALTIME, &tv);
-  t  = ((double) tv.tv_nsec) * 1e-9;
-  t += ((double) tv.tv_sec);
+  clock_gettime(CLOCK_REALTIME, &ts);
+  t  = ((double) ts.tv_nsec) * 1e-9;
+  t += ((double) ts.tv_sec);
   return t;
 }
 ${hr}
