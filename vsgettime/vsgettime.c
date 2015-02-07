@@ -95,17 +95,31 @@ double vsgettime()
   return t;
 }
 //----------------------------------------------------------------------------
+// return real time in seconds
+long double vsgettime_ng()
+{
+  struct timespec ts;
+  long double t;
+
+  clock_gettime(CLOCK_REALTIME, &ts);
+  t  = ((long double) ts.tv_nsec) * 1e-9L; // ns -> sec
+  t += ((long double) ts.tv_sec);
+
+  return t;
+}
+//----------------------------------------------------------------------------
 #ifdef VSGETTIME_TEST
 #include <stdio.h>
 int main()
 {
   double t1, t2;
+  long double T1, T2;
   int i, j;
   
-  t1 = vsgettime();
-  t2 = vsgettime();
-  printf("minimal dt = %.3f [us]\n", (t2 - t1) * 1e6);
-  printf("\"real\" time = %.3f [sec]\n", t2);
+  T1 = vsgettime_ng();
+  T2 = vsgettime_ng();
+  printf("minimal dt = %.3Lf [us]\n", (T2 - T1) * 1e6L);
+  printf("\"real\" time = %.3Lf [sec]\n", T2);
 
   t1 = vsgettime();
   for (i = 0; i < 1000000; i++)
