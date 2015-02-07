@@ -34,8 +34,7 @@ static LARGE_INTEGER _getFILETIMEoffset()
   return (t);
 }
 //----------------------------------------------------------------------------
-//int clock_gettime((clockid_t clk_id, struct timespec *tp)
-int clock_gettime(int clk_id, struct timespec *tp)
+int clock_gettime(clockid_t clk_id, struct timespec *tp)
 {
   LARGE_INTEGER t;
   FILETIME f;
