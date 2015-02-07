@@ -1,5 +1,11 @@
 #! /bin/sh
 
+if [ `uname` != Linux ]
+then
+  echo "This VSRPC test may run under Linux only; exit"
+  exit
+fi
+  
 if true
 then
   bash ../../vsrpc_idl.sh \
