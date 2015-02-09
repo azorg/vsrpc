@@ -39,8 +39,8 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
 #endif
 //----------------------------------------------------------------------------
 // return real time in seconds
-     double vsgettime();    // 64 bit
-long double vsgettime_ng(); // 128 bit
+     double vsgettime();    // ~64 bit
+long double vsgettime_ng(); // ~96..128 bit
 //----------------------------------------------------------------------------
 #ifdef __cplusplus
 }
