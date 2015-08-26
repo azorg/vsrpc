@@ -1,5 +1,13 @@
 #!/bin/sh
 
+if [ `uname` = "Linux" ]
+then
+  PROC_NUM=`grep processor /proc/cpuinfo | wc -l`
+	OPT="-j $PROC_NUM"
+else
+	OPT="WIN32=1"
+fi
+
 ../../vsrpc_idl.sh \
   --input-file ../vstcpd/rpc.vsidl \
   --client-out-dir client \
@@ -13,6 +21,5 @@
   --remote-suffix  _remote \
   --remote-suffix  _local
 
-test `uname` = Linux && OPT='-j4' || OPT='WIN32=1'
-make ${OPT}
+make $OPT
 
