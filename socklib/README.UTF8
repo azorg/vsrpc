@@ -1,5 +1,5 @@
 Переносимая библиотека для работы с TCP/UDP сокетами "socklib".
-Версия: 0.12
+Версия: 0.13
 Лицензия: BSD
 Авторы: Alex Grinkov <a.grinkov@gmail.com>,
         Anton Shmigirilov <shmigirilov@gmail.com>

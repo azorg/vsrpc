@@ -3,6 +3,9 @@ ChangeLog for TCP/UDP sockets library "socklib".
  - removed
  * changed
 
+2015.09.03 [grinkov]
+ + add sl_udp_make_server_socket_ex()
+
 2015.02.02 [grinkov]
  * update sl_error_str(), correct sl_select() description
  * format text

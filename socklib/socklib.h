@@ -1,10 +1,10 @@
 /*
  * Simple wrappers to work with UNIX-like TCP/IP sockets
- * Version: 0.12
+ * Version: 0.13
  * File: "socklib.h"
  * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
  * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
- * Last update: 2015.02.02
+ * Last update: 2015.09.03
  */
 
 #ifndef SOCKLIB_H
@@ -111,7 +111,10 @@ int sl_read_all_to(int fd, void *buf, int size, int ms);
 int sl_write(int fd, const void *buf, int size);
 //----------------------------------------------------------------------------
 // make server UDP socket
-int sl_udp_make_server_socket(int port);
+int sl_udp_make_server_socket_ex(const char *host_ip, int port);
+//----------------------------------------------------------------------------
+// make server UDP socket (simple)
+int sl_udp_make_server_socket(int port); // host_ip="0.0.0.0"
 //----------------------------------------------------------------------------
 // make client UDP socket
 int sl_udp_make_client_socket();

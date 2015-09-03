@@ -1,10 +1,10 @@
 /*
  * Simple wrappers to work with UNIX-like TCP/IP sockets
- * Version: 0.12
+ * Version: 0.13
  * File: "socklib.c"
  * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
  * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
- * Last update: 2015.02.02
+ * Last update: 2015.09.03
  */
 
 //----------------------------------------------------------------------------
@@ -67,12 +67,12 @@ static const char *sl_errors[] = {
 static const char *sl_error_unknown = "unknown error";
 //----------------------------------------------------------------------------
 #ifdef SL_WIN32
-// emulate BSD inet_aton for win32
+// emulate BSD inet_aton() for win32
 static int inet_aton(const char *name, struct in_addr *addr)
 {
   unsigned long a;
 
-  a = inet_addr (name);
+  a = inet_addr(name);
   addr->s_addr = a;
 
   return (a != (unsigned long) - 1);
@@ -154,7 +154,7 @@ int sl_make_server_socket_ex(const char *host_ip, int port, int backlog)
   
   memcpy((void*) &saddr.sin_addr, (const void*) &iaddr, (size_t) sizeof(iaddr));
   
-  saddr.sin_port = htons( (unsigned short)port );
+  saddr.sin_port = htons((unsigned short) port);
   saddr.sin_family = AF_INET;
   if (bind(sock, (struct sockaddr *) &saddr, sizeof(saddr)) != 0)
     return SL_ERROR_BIND;
@@ -178,7 +178,7 @@ int sl_connect_to_server(const char *host, int port)
   int sock; // socket ID
   unsigned ip_addr;
   struct sockaddr_in saddr;
-  struct hostent  *hp;
+  struct hostent *hp;
 
   if (!sl_initialized)
     return SL_ERROR_NOTINIT;
@@ -195,7 +195,7 @@ int sl_connect_to_server(const char *host, int port)
   {
     ip_addr = inet_addr(host);
 
-    if(ip_addr == INADDR_NONE)
+    if (ip_addr == INADDR_NONE)
       return SL_ERROR_RESOLVE;
     else
       saddr.sin_addr.s_addr = ip_addr;
@@ -263,7 +263,9 @@ int sl_accept(int server_socket, unsigned *ipaddr)
       return SL_ERROR_ACCEPT; // error
     }
 
-    *ipaddr = (unsigned) (((struct sockaddr_in *)&addr)->sin_addr.s_addr);
+    if (ipaddr != (unsigned*) NULL)
+      *ipaddr = (unsigned) (((struct sockaddr_in *)&addr)->sin_addr.s_addr);
+
     return fd; // success, client connected
   } // while(1)
 }
@@ -487,9 +489,10 @@ int sl_write(int fd, const void *buf, int size)
 }
 //----------------------------------------------------------------------------
 // make server UDP socket
-int sl_udp_make_server_socket(int port)
+int sl_udp_make_server_socket_ex(const char *host_ip, int port)
 {
   int sock;
+  struct in_addr iaddr;
   struct sockaddr_in saddr;
 
   if (!sl_initialized)
@@ -502,14 +505,26 @@ int sl_udp_make_server_socket(int port)
 
   // bind(...)
   memset(&saddr, 0, sizeof(saddr));
-  saddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  saddr.sin_port = htons( (unsigned short) port);
+  
+  if (inet_aton(host_ip, &iaddr) == 0)
+    return SL_ERROR_ADDR;
+  
+  memcpy((void*) &saddr.sin_addr, (const void*) &iaddr, (size_t) sizeof(iaddr));
+  //saddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  
+  saddr.sin_port = htons((unsigned short) port);
   saddr.sin_family = AF_INET;
 
   if (bind(sock, (struct sockaddr*) &saddr, sizeof(saddr)) < 0)
     return SL_ERROR_BIND;
 
   return sock;
+}
+//----------------------------------------------------------------------------
+// make server UDP socket (simple)
+int sl_udp_make_server_socket(int port)
+{
+  return sl_udp_make_server_socket_ex("0.0.0.0", port);
 }
 //----------------------------------------------------------------------------
 // make client UDP socket
