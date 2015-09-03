@@ -42,6 +42,9 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
      double vsgettime();    // ~64 bit
 long double vsgettime_ng(); // ~96..128 bit
 //----------------------------------------------------------------------------
+// convert seconds in `double` to `struct timespec`
+struct timespec vsgettime_timespec(double t);
+//----------------------------------------------------------------------------
 #ifdef __cplusplus
 }
 #endif // __cplusplus

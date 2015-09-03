@@ -107,6 +107,15 @@ long double vsgettime_ng()
 
   return t;
 }
+//-----------------------------------------------------------------------------
+// convert seconds in `double` to `struct timespec`
+struct timespec vsgettime_timespec(double t)
+{
+  struct timespec ts;
+  ts.tv_sec  = (time_t) t;
+  ts.tv_nsec = (long) ((t - (double) ts.tv_sec) * 1e9);
+  return ts;
+}
 //----------------------------------------------------------------------------
 #ifdef VSGETTIME_TEST
 #include <stdio.h>
