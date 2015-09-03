@@ -142,7 +142,7 @@ int sl_make_server_socket_ex(const char *host_ip, int port, int backlog)
     return SL_ERROR_NOTINIT;
 
   // socket(...)
-  sock = (int)socket(AF_INET, SOCK_STREAM, 0); // get socket
+  sock = (int) socket(AF_INET, SOCK_STREAM, 0); // get socket
   if (sock < 0)
     return SL_ERROR_SOCKET;
 
@@ -205,7 +205,7 @@ int sl_connect_to_server(const char *host, int port)
     memcpy((void*) &saddr.sin_addr,
            (const void*) hp->h_addr, (size_t) hp->h_length);
   }
-  saddr.sin_port = htons( (unsigned short)port );
+  saddr.sin_port = htons((unsigned short) port);
   saddr.sin_family = AF_INET;
  
   if (connect(sock, (struct sockaddr *) &saddr, sizeof(saddr)) != 0)
@@ -564,11 +564,13 @@ int sl_udp_read(int fd, void *buf, int size, unsigned *ipaddr)
 
   if (ret < 0)
   {
-    *ipaddr = (unsigned) - 1;
+    if (ipaddr != (unsigned*) NULL)
+      *ipaddr = (unsigned) - 1;
     return SL_ERROR_READ;
   }
 
-  *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
+  if (ipaddr != (unsigned*) NULL)
+    *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
 
   return ret;
 }
@@ -600,11 +602,13 @@ int sl_udp_read_to(int fd, void *buf, int size, unsigned *ipaddr, int ms)
 
   if (ret < 0)
   {
-    *ipaddr = (unsigned) - 1;
+    if (ipaddr != (unsigned*) NULL)
+      *ipaddr = (unsigned) - 1;
     return SL_ERROR_READ;
   }
 
-  *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
+  if (ipaddr != (unsigned*) NULL)
+    *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
 
   return ret;
 }
@@ -680,7 +684,7 @@ unsigned sl_inet_aton(const char *s)
   struct in_addr iaddr;
   memset((void*) &iaddr, 0, sizeof(iaddr));
   inet_aton(s, &iaddr);
-  return (unsigned) (iaddr.s_addr);
+  return (unsigned) iaddr.s_addr;
 }
 //----------------------------------------------------------------------------
 // convert numeric ipaddr to dotted
@@ -689,6 +693,34 @@ const char *sl_inet_ntoa(unsigned ipaddr)
   struct in_addr iaddr;
   iaddr.s_addr = ipaddr;
   return (const char*) inet_ntoa(iaddr);
+}
+//----------------------------------------------------------------------------
+// get host by name
+int sl_gethostbyname(const char *host, unsigned *ip_addr)
+{
+  struct hostent *hp;
+  struct in_addr iaddr;
+
+  memset((void*) &iaddr, 0, sizeof(iaddr)); // clear address
+
+  hp = gethostbyname(host);
+  if (hp == NULL)
+  {
+    *ip_addr = (unsigned) inet_addr(host);
+
+    if (*ip_addr == INADDR_NONE)
+      return SL_ERROR_RESOLVE;
+    else
+      return SL_SUCCESS;
+  }
+  else
+  {
+    memcpy((void*) &iaddr,
+           (const void*) hp->h_addr, (size_t) hp->h_length);
+
+    *ip_addr = (unsigned) iaddr.s_addr;
+    return SL_SUCCESS;
+  }
 }
 //----------------------------------------------------------------------------
 unsigned sl_htonl(unsigned hostlong)

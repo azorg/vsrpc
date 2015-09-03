@@ -139,6 +139,9 @@ unsigned sl_inet_aton(const char *s);
 // convert numeric ipaddr to dotted
 const char *sl_inet_ntoa(unsigned ipaddr);
 //----------------------------------------------------------------------------
+// get host by name
+int sl_gethostbyname(const char *host, unsigned *ip_addr);
+//----------------------------------------------------------------------------
 // ntohl etc wrappers
 unsigned sl_htonl(unsigned hostlong);
 unsigned short sl_htons(unsigned short hostshort);
