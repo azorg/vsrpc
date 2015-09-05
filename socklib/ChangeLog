@@ -3,6 +3,13 @@ ChangeLog for TCP/UDP sockets library "socklib".
  - removed
  * changed
 
+2015.09.05 [grinkov]
+ + add sl_select_ex() for may mask/unmask signal interrupt
+ * update some UDP functions
+
+2015.09.04 [grinkov]
+ * fix some UDP functions
+
 2015.09.03 [grinkov]
  + add sl_udp_make_server_socket_ex()
  + add sl_gethostbyname() simple wrapper

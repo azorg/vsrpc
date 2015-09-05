@@ -4,7 +4,7 @@
  * File: "socklib.h"
  * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
  * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
- * Last update: 2015.09.03
+ * Last update: 2015.09.05
  */
 
 #ifndef SOCKLIB_H
@@ -78,10 +78,10 @@ const char *sl_error_str(int err);
 int sl_get_last_error();
 //----------------------------------------------------------------------------
 // make server TCP socket
-int sl_make_server_socket_ex(const char *host_ip, int port, int backlog);
+int sl_make_server_socket_ex(const char *listen_ip, int port, int backlog);
 //----------------------------------------------------------------------------
 // make server TCP socket (simple)
-int sl_make_server_socket(int port); // host_ip="0.0.0.0" backlog=1
+int sl_make_server_socket(int port); // listen_ip="0.0.0.0" backlog=1
 //----------------------------------------------------------------------------
 // make client TCP socket
 int sl_connect_to_server(const char *host, int port);
@@ -93,6 +93,11 @@ int sl_disconnect(int fd);
 int sl_accept(int server_socket, unsigned *ipaddr);
 //----------------------------------------------------------------------------
 // select wraper for non block read (return 0:false, 1:true, <0:error code)
+// if sigmask!=0 ignore interrupt by signals
+int sl_select_ex(int fd, int msec, int sigmask);
+//----------------------------------------------------------------------------
+// select wraper for non block read (return 0:false, 1:true, <0:error code)
+// (sigmask = 0)
 int sl_select(int fd, int msec);
 //----------------------------------------------------------------------------
 // fuse select wraper (always return 1)
@@ -111,27 +116,28 @@ int sl_read_all_to(int fd, void *buf, int size, int ms);
 int sl_write(int fd, const void *buf, int size);
 //----------------------------------------------------------------------------
 // make server UDP socket
-int sl_udp_make_server_socket_ex(const char *host_ip, int port);
+int sl_udp_make_server_socket_ex(const char *listen_ip, int port);
 //----------------------------------------------------------------------------
 // make server UDP socket (simple)
-int sl_udp_make_server_socket(int port); // host_ip="0.0.0.0"
+int sl_udp_make_server_socket(int port); // listen_ip="0.0.0.0"
 //----------------------------------------------------------------------------
 // make client UDP socket
 int sl_udp_make_client_socket();
 //----------------------------------------------------------------------------
 // read datagram from UDP socket (blocked)
-int sl_udp_read(int fd, void *buf, int size, unsigned *ipaddr);
+int sl_udp_read(int sock, void *buf, int size, unsigned *ipaddr, int *port);
 //----------------------------------------------------------------------------
 // read datagram from UDP socket (timeout)
-int sl_udp_read_to(int fd, void *buf, int size, unsigned *ipaddr, int ms);
+int sl_udp_read_to(int sock, void *buf, int size,
+                   unsigned *ipaddr, int *port, int ms);
 //----------------------------------------------------------------------------
 // send datagram to peer via UDP to ip numeric
-int sl_udp_sendto(int fd, unsigned ipaddr, int port,
-                  const void *buf, int size);
+int sl_udp_sendto(int sock, unsigned ipaddr, int port,
+                  const void *buf, int size, int connect_flag);
 //----------------------------------------------------------------------------
 // send datagram to peer via UDP to ip char*
-int sl_udp_sendto_addr(int fd, const char *host, int port,
-                       const void *buf, int size);
+int sl_udp_sendto_addr(int sock, const char *host, int port,
+                       const void *buf, int size, int connect_flag);
 //----------------------------------------------------------------------------
 // convert dotted ipaddr to numeric
 unsigned sl_inet_aton(const char *s);

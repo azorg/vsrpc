@@ -4,7 +4,7 @@
  * File: "socklib.c"
  * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
  * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
- * Last update: 2015.09.03
+ * Last update: 2015.09.05
  */
 
 //----------------------------------------------------------------------------
@@ -132,7 +132,7 @@ int sl_get_last_error()
 }
 //----------------------------------------------------------------------------
 // make server TCP/IP socket
-int sl_make_server_socket_ex(const char *host_ip, int port, int backlog)
+int sl_make_server_socket_ex(const char *listen_ip, int port, int backlog)
 {
   int sock; // socket ID
   struct sockaddr_in saddr; // address of socket
@@ -149,7 +149,7 @@ int sl_make_server_socket_ex(const char *host_ip, int port, int backlog)
   // bind(...)
   memset((void*) &saddr, (int) 0, (size_t) sizeof(saddr)); // clear address
   
-  if (inet_aton(host_ip, &iaddr) == 0)
+  if (inet_aton(listen_ip, &iaddr) == 0)
     return SL_ERROR_ADDR;
   
   memcpy((void*) &saddr.sin_addr, (const void*) &iaddr, (size_t) sizeof(iaddr));
@@ -271,7 +271,8 @@ int sl_accept(int server_socket, unsigned *ipaddr)
 }
 //----------------------------------------------------------------------------
 // select wraper for non block read (return 0:false, 1:true, <0:error code)
-int sl_select(int fd, int msec)
+// if sigmask!=0 ignore interrupt by signals
+int sl_select_ex(int fd, int msec, int sigmask)
 {
 #ifdef SL_USE_POLL
   // use poll()
@@ -288,7 +289,12 @@ int sl_select(int fd, int msec)
     if (retv < 0)
     {
       if (errno == EINTR)
-        continue; // interrupt by signal
+        // interrupt by signal
+        if (sigmask)
+          continue;
+        else
+          return 0;
+          
       return SL_ERROR_POOL; // error
     }
     break;
@@ -313,7 +319,7 @@ int sl_select(int fd, int msec)
   {
     FD_ZERO(&fds);
 #ifdef SL_WIN32
-    FD_SET((SOCKET)fd, &fds);
+    FD_SET((SOCKET) fd, &fds);
 #else // SL_WIN32
     FD_SET(fd, &fds);
 #endif // SL_WIN32
@@ -330,7 +336,11 @@ int sl_select(int fd, int msec)
     {
 #ifndef SL_WIN32
       if (errno == EINTR)
-        continue; // interrupt by signal
+        // interrupt by signal
+        if (sigmask)
+          continue;
+        else
+          return 0;
 #endif // SL_WIN32
       return SL_ERROR_SELECT; // error
     }
@@ -342,6 +352,13 @@ int sl_select(int fd, int msec)
 
   return 0; // empty
 #endif // !SL_USE_SELECT
+}
+//----------------------------------------------------------------------------
+// select wraper for non block read (return 0:false, 1:true, <0:error code)
+// (sigmask = 0)
+int sl_select(int fd, int msec)
+{
+  return sl_select_ex(fd, msec, 0);
 }
 //----------------------------------------------------------------------------
 // fuse select wraper (always return 1)
@@ -489,7 +506,7 @@ int sl_write(int fd, const void *buf, int size)
 }
 //----------------------------------------------------------------------------
 // make server UDP socket
-int sl_udp_make_server_socket_ex(const char *host_ip, int port)
+int sl_udp_make_server_socket_ex(const char *listen_ip, int port)
 {
   int sock;
   struct in_addr iaddr;
@@ -499,14 +516,14 @@ int sl_udp_make_server_socket_ex(const char *host_ip, int port)
     return SL_ERROR_NOTINIT;
 
   // socket(...)
-  sock = (int) socket(AF_INET, SOCK_DGRAM, 0);
+  sock = (int) socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sock < 0)
     return SL_ERROR_SOCKET;
 
   // bind(...)
   memset(&saddr, 0, sizeof(saddr));
   
-  if (inet_aton(host_ip, &iaddr) == 0)
+  if (inet_aton(listen_ip, &iaddr) == 0)
     return SL_ERROR_ADDR;
   
   memcpy((void*) &saddr.sin_addr, (const void*) &iaddr, (size_t) sizeof(iaddr));
@@ -544,7 +561,7 @@ int sl_udp_make_client_socket()
 }
 //----------------------------------------------------------------------------
 // read datagram from UDP socket (blocked)
-int sl_udp_read(int fd, void *buf, int size, unsigned *ipaddr)
+int sl_udp_read(int sock, void *buf, int size, unsigned *ipaddr, int *port)
 {
   int ret, len;
   struct sockaddr_in client;
@@ -554,29 +571,45 @@ int sl_udp_read(int fd, void *buf, int size, unsigned *ipaddr)
 
   len = sizeof(client);
 
+  while (1)
+  {
 #ifdef SL_WIN32
-  ret = recvfrom(fd, (char*) buf, size, 0,
-                 (struct sockaddr*) &client, (socklen_t*) &len);
+    ret = recvfrom(sock, (char*) buf, size, 0,
+                   (struct sockaddr*) &client, (socklen_t*) &len);
 #else // SL_WIN32
-  ret = recvfrom(fd, buf, size, 0,
-                 (struct sockaddr*) &client, (socklen_t*) &len);
+    ret = recvfrom(sock, buf, size, 0,
+                   (struct sockaddr*) &client, (socklen_t*) &len);
 #endif // SL_WIN32
 
-  if (ret < 0)
-  {
+    if (ret < 0)
+    {
+#ifndef SL_WIN32
+      if (errno == EINTR)
+        continue; // interrupt by signal
+#endif // SL_WIN32
+
+      if (ipaddr != (unsigned*) NULL)
+        *ipaddr = (unsigned) - 1;
+ 
+      if (port != (int*) NULL)
+        *port = -1;
+ 
+      return SL_ERROR_READ;
+    }
+  
     if (ipaddr != (unsigned*) NULL)
-      *ipaddr = (unsigned) - 1;
-    return SL_ERROR_READ;
-  }
-
-  if (ipaddr != (unsigned*) NULL)
-    *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
-
-  return ret;
+      *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
+ 
+    if (port != (int*) NULL)
+      *port = (int) ntohs(((struct sockaddr_in*) &client)->sin_port);
+  
+    return ret;
+  } // while (1)
 }
 //----------------------------------------------------------------------------
 // read datagram from UDP socket (timeout)
-int sl_udp_read_to(int fd, void *buf, int size, unsigned *ipaddr, int ms)
+int sl_udp_read_to(int sock, void *buf, int size,
+                   unsigned *ipaddr, int *port, int ms)
 {
   int ret, len;
   struct sockaddr_in client;
@@ -584,7 +617,7 @@ int sl_udp_read_to(int fd, void *buf, int size, unsigned *ipaddr, int ms)
   if (!sl_initialized)
     return SL_ERROR_NOTINIT;
 
-  ret = sl_select(fd, ms);
+  ret = sl_select(sock, ms);
   if (ret < 0)
     return SL_ERROR_SELECT;
   else if (ret == 0)
@@ -592,30 +625,45 @@ int sl_udp_read_to(int fd, void *buf, int size, unsigned *ipaddr, int ms)
 
   len = sizeof(client);
 
+  while (1)
+  {
 #ifdef SL_WIN32
-  ret = recvfrom(fd, (char*) buf, size, 0,
-                 (struct sockaddr*) &client, (socklen_t*) &len);
+    ret = recvfrom(sock, (char*) buf, size, 0,
+                   (struct sockaddr*) &client, (socklen_t*) &len);
 #else // SL_WIN32
-  ret = recvfrom(fd, buf, size, 0,
-                 (struct sockaddr*) &client, (socklen_t*) &len);
+    ret = recvfrom(sock, buf, size, 0,
+                   (struct sockaddr*) &client, (socklen_t*) &len);
 #endif // SL_WIN32
 
-  if (ret < 0)
-  {
+    if (ret < 0)
+    {
+#ifndef SL_WIN32
+      if (errno == EINTR)
+        continue; // interrupt by signal
+#endif // SL_WIN32
+
+      if (ipaddr != (unsigned*) NULL)
+        *ipaddr = (unsigned) - 1;
+    
+      if (port != (int*) NULL)
+        *port = -1;
+
+      return SL_ERROR_READ;
+    }  
+
     if (ipaddr != (unsigned*) NULL)
-      *ipaddr = (unsigned) - 1;
-    return SL_ERROR_READ;
-  }
+      *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
 
-  if (ipaddr != (unsigned*) NULL)
-    *ipaddr = (unsigned) (((struct sockaddr_in*) &client)->sin_addr.s_addr);
-
-  return ret;
+    if (port != (int*) NULL)
+      *port = (int) ntohs(((struct sockaddr_in*) &client)->sin_port);
+ 
+    return ret;
+  } // while (1)
 }
 //----------------------------------------------------------------------------
 // send datagram to peer via UDP to ip
-int sl_udp_sendto(int fd, unsigned ipaddr, int port,
-                  const void *buf, int size)
+int sl_udp_sendto(int sock, unsigned ipaddr, int port,
+                  const void *buf, int size, int connect_flag)
 {
   struct sockaddr_in to_addr;
   int ret;
@@ -626,26 +674,30 @@ int sl_udp_sendto(int fd, unsigned ipaddr, int port,
   memset(&to_addr, 0, sizeof(to_addr));
 
   to_addr.sin_family = AF_INET;
-  to_addr.sin_port = htons((unsigned short)port);
+  to_addr.sin_port = htons((unsigned short) port);
   to_addr.sin_addr.s_addr = ipaddr;
 
 #ifdef SL_WIN32
-  ret = sendto(fd, (const char*) buf, size, 0,
+  ret = sendto(sock, (const char*) buf, size, 0,
                (struct sockaddr*) &to_addr, sizeof(to_addr));
 #else // SL_WIN32
-  ret = sendto(fd, buf, size, 0,
+  ret = sendto(sock, buf, size, 0,
                (struct sockaddr*) &to_addr, sizeof(to_addr));
 #endif // SL_WIN32
 
   if (ret < 0)
     return SL_ERROR_WRITE;
 
+  if (connect_flag)
+    if (connect(sock, (struct sockaddr *) &to_addr, sizeof(to_addr)) != 0)
+      return SL_ERROR_CONNECT;
+
   return ret;
 }
 //----------------------------------------------------------------------------
 // send datagram to peer via UDP to host
-int sl_udp_sendto_addr(int fd, const char *host, int port,
-                       const void *buf, int size)
+int sl_udp_sendto_addr(int sock, const char *host, int port,
+                       const void *buf, int size, int connect_flag)
 {
   int ret;
   struct sockaddr_in to_addr;
@@ -665,15 +717,19 @@ int sl_udp_sendto_addr(int fd, const char *host, int port,
   to_addr.sin_addr.s_addr = inet_addr(host);
 
 #ifdef SL_WIN32
-  ret = sendto(fd, (const char*) buf, size, 0,
+  ret = sendto(sock, (const char*) buf, size, 0,
                (struct sockaddr*) &to_addr, sizeof(to_addr));
 #else // SL_WIN32
-  ret = sendto(fd, buf, size, 0,
+  ret = sendto(sock, buf, size, 0,
                (struct sockaddr*) &to_addr, sizeof(to_addr));
 #endif // SL_WIN32
 
   if (ret < 0)
     return SL_ERROR_WRITE;
+
+  if (connect_flag)
+    if (connect(sock, (struct sockaddr *) &to_addr, sizeof(to_addr)) != 0)
+      return SL_ERROR_CONNECT;
 
   return ret;
 }
