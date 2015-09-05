@@ -294,7 +294,7 @@ int sl_select_ex(int fd, int msec, int sigmask)
           continue;
         else
           return 0;
-      }    
+      }
       return SL_ERROR_POOL; // error
     }
     break;
