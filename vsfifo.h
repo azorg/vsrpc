@@ -2,13 +2,13 @@
  * Very Simple FIFO (Very Simple Remote Procedure Call (VSRPC) project)
  * Version: 0.9
  * File: "vsfifo.h"
- * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
+ * (C) 2007-2018 Alex Grinkov <a.grinkov@gmail.com>
  */
 
 #ifndef VSFIFO_H
 #define VSFIFO_H
 //----------------------------------------------------------------------------
-#include "vssync.h" // vsset_t
+#include "vssync.h"
 //----------------------------------------------------------------------------
 // add receive/send functions from/to pipe
 #define VSFIFO_PIPE
@@ -23,7 +23,8 @@ struct vsfifo_ {
   char *out;        // pointer to next output data
   int count;        // data counter
   int size;         // FIFO size
-  vssem_t read_sem; // block read wait semaphore
+  vsmutex_t lock;   // mutex lock
+  vssem_t read_sem; // read wait semaphore
 };
 //----------------------------------------------------------------------------
 #ifdef __cplusplus
@@ -31,7 +32,7 @@ extern "C" {
 #endif // __plusplus
 //----------------------------------------------------------------------------
 // create new FIFO (constructor)
-// on success return 0, else -1
+// on success return 0, else <0
 int vsfifo_init(vsfifo_t *fifo, int size);
 
 // print fifo status
@@ -58,7 +59,7 @@ int vsfifo_read_nb(vsfifo_t *fifo, void *buf, int count);
 // read part from FIFO to memory buffer (block thread if FIFO empty)
 int vsfifo_read_part(vsfifo_t *fifo, void *buf, int count);
 
-// read from FIFO to memory buffer
+// read from FIFO to memory buffer at once
 int vsfifo_read(vsfifo_t *fifo, void *buf, int count);
 
 // read (and not eject!) from FIFO to memory buffer non-block

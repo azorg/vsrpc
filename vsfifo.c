@@ -2,7 +2,7 @@
  * Very Simple FIFO (Very Simple Remote Procedure Call (VSRPC) project)
  * Version: 0.9
  * File: "vsfifo.c"
- * (C) 2007-2015 Alex Grinkov <a.grinkov@gmail.com>
+ * (C) 2007-2018 Alex Grinkov <a.grinkov@gmail.com>
  */
 
 // ---------------------------------------------------------------------------
@@ -20,67 +20,109 @@
 // print FIFO values
 void vsfifo_show(vsfifo_t *fifo)
 {
-  int semval;
+  int sem_val;
 
-  printf("ptr: %p\n", fifo->data);
-  printf("in : %p\n", fifo->in);
-  printf("out: %p\n", fifo->out);
+  vsmutex_lock(&fifo->lock);
+
+  printf("ptr:   %p\n", fifo->data);
+  printf("in :   %p\n", fifo->in);
+  printf("out:   %p\n", fifo->out);
   printf("count: %d\n", fifo->count);
-  printf("size: %d\n", fifo->size);
-
-  vssem_getvalue(&fifo->read_sem, &semval);
-
-  printf("sem_value: %d\n", semval);
+  printf("size:  %d\n", fifo->size);
+  
+  vssem_getvalue(&fifo->read_sem, &sem_val);
+  printf("sem_value: %d\n", sem_val);
+  
+  vsmutex_unlock(&fifo->lock);
 }
 //----------------------------------------------------------------------------
 // create new FIFO (constructor)
-// on success return 0, else -1
+// on success return 0, else <0
 int vsfifo_init(vsfifo_t *fifo, int size)
 {
   int ret;
 
   fifo->in = fifo->out = fifo->data =
     (char*) malloc((size_t) (fifo->size = size));
-  if (fifo->data == (char*) NULL) return -1; // error: out of memory
+  if (fifo->data == (char*) NULL)
+  { // error: out of memory
+    ret = -1;
+    goto err_1;
+  }
 
-  ret = vssem_init(&(fifo->read_sem), 0, 0);
-  if (ret == -1)
-    return -2;
+  ret = vsmutex_init(&fifo->lock);
+  if (ret < 0)
+  { // error: can't init mutex
+    ret = -2;
+    goto err_2;
+  }
 
-  return (fifo->count = 0); // success
+  ret = vssem_init(&fifo->read_sem, 0, 0);
+  if (ret < 0)
+  { // error: can't init semaphore
+    ret = -3;
+    goto err_3;
+  }
+
+  fifo->count = 0;
+  return 0; // success
+
+err_3:
+  vsmutex_destroy(&fifo->lock);
+err_2:
+  free((void*) fifo->data);
+err_1:
+  return ret;
 }
 //----------------------------------------------------------------------------
 // desrtroy FIFO (destructor)
 void vsfifo_release(vsfifo_t *fifo)
 {
+  vssem_destroy(&fifo->read_sem);
+  vsmutex_destroy(&fifo->lock);
   free((void*) fifo->data);
 }
 //----------------------------------------------------------------------------
 // clear FIFO
 void vsfifo_clear(vsfifo_t *fifo)
 {
+  vsmutex_lock(&fifo->lock);
+
   fifo->in = fifo->out = fifo->data;
   fifo->count = 0;
+
+  vsmutex_unlock(&fifo->lock);
 }
 //----------------------------------------------------------------------------
 // return FIFO counter
 int vsfifo_count(vsfifo_t *fifo)
 {
-  return fifo->count;
+  int count;
+  vsmutex_lock(&fifo->lock);
+  count = fifo->count;
+  vsmutex_unlock(&fifo->lock);
+  return count;
 }
 //----------------------------------------------------------------------------
 // return FIFO free bytes
 int vsfifo_free(vsfifo_t *fifo)
 {
-  return fifo->size - fifo->count;
+  int free_bytes;
+  vsmutex_lock(&fifo->lock);
+  free_bytes = fifo->size - fifo->count;
+  vsmutex_unlock(&fifo->lock);
+  return free_bytes;
 }
 //----------------------------------------------------------------------------
 // write to FIFO from memory buffer
 int vsfifo_write(vsfifo_t *fifo, const void *buf, int count)
 {
-  int tail, head, semval;
+  int tail, head, sem_val;
   
   if (count <= 0) return 0; // bad argument
+
+  vsmutex_lock(&fifo->lock);
+
   tail = fifo->size - fifo->count;
   if (count > tail) count = tail;
   tail = fifo->data + fifo->size - fifo->in;
@@ -99,8 +141,10 @@ int vsfifo_write(vsfifo_t *fifo, const void *buf, int count)
   }
   fifo->count += count;
 
-  vssem_getvalue(&fifo->read_sem, &semval);
-  if (semval == 0)
+  vsmutex_unlock(&fifo->lock);
+
+  vssem_getvalue(&fifo->read_sem, &sem_val);
+  if (sem_val == 0)
     vssem_post(&fifo->read_sem);
 
   return count;
@@ -112,6 +156,8 @@ int vsfifo_read_nb(vsfifo_t *fifo, void *buf, int count)
   int tail, head;
   if (count <= 0) return 0; // bad argument
 
+  vsmutex_lock(&fifo->lock);
+
   if (count > fifo->count) count = fifo->count;
 
   tail = fifo->data + fifo->size - fifo->out;
@@ -130,6 +176,9 @@ int vsfifo_read_nb(vsfifo_t *fifo, void *buf, int count)
     fifo->out = fifo->data + head;
   }
   fifo->count -= count;
+  
+  vsmutex_unlock(&fifo->lock);
+
   return count;
 }
 //----------------------------------------------------------------------------
@@ -139,9 +188,15 @@ int vsfifo_read_part(vsfifo_t *fifo, void *buf, int count)
   int tail, head;
   if (count <= 0) return 0; // bad argument
   
+  vsmutex_lock(&fifo->lock);
+  
   // wait until fifo empty
   while (fifo->count == 0)
+  {
+    vsmutex_unlock(&fifo->lock);
     vssem_wait(&fifo->read_sem);
+    vsmutex_lock(&fifo->lock);
+  }
 
   if (count > fifo->count) count = fifo->count;
 
@@ -161,18 +216,27 @@ int vsfifo_read_part(vsfifo_t *fifo, void *buf, int count)
     fifo->out = fifo->data + head;
   }
   fifo->count -= count;
+
+  vsmutex_unlock(&fifo->lock);
+
   return count;
 }
 //----------------------------------------------------------------------------
-// read from FIFO to memory buffer
+// read from FIFO to memory buffer at once
 int vsfifo_read(vsfifo_t *fifo, void *buf, int count)
 {
   int tail, head;
   if (count <= 0) return 0; // bad argument
 
+  vsmutex_lock(&fifo->lock);
+
   // wait until fifo size lesser then requested
   while (count > fifo->count)
+  {
+    vsmutex_unlock(&fifo->lock);
     vssem_wait(&fifo->read_sem);
+    vsmutex_lock(&fifo->lock);
+  }
 
   tail = fifo->data + fifo->size - fifo->out;
   if (count <= tail)
@@ -191,7 +255,7 @@ int vsfifo_read(vsfifo_t *fifo, void *buf, int count)
   }
   fifo->count -= count;
 
-  vssem_init(&(fifo->read_sem), 0, 0);
+  vsmutex_unlock(&fifo->lock);
 
   return count;
 }
@@ -201,6 +265,8 @@ int vsfifo_read_back(vsfifo_t *fifo, void *buf, int count)
 {
   int tail, head;
   if (count <= 0) return 0; // bad argument
+
+  vsmutex_lock(&fifo->lock);
 
   if (count > fifo->count) count = fifo->count;
 
@@ -216,6 +282,9 @@ int vsfifo_read_back(vsfifo_t *fifo, void *buf, int count)
     memcpy((void*) (((char*) buf) + tail), (const void*) fifo->data,
             (size_t) head);
   }
+  
+  vsmutex_unlock(&fifo->lock);
+
   return count;
 }
 //----------------------------------------------------------------------------
@@ -224,6 +293,9 @@ int vsfifo_to_nowhere(vsfifo_t *fifo, int count)
 {
   int tail;
   if (count <= 0) return 0; // bad argument
+
+  vsmutex_lock(&fifo->lock);
+
   if (count > fifo->count) count = fifo->count;
   tail = fifo->data + fifo->size - fifo->out;
   if (count < tail)
@@ -233,6 +305,9 @@ int vsfifo_to_nowhere(vsfifo_t *fifo, int count)
   else // count == tail
     fifo->out = fifo->data;
   fifo->count -= count;
+
+  vsmutex_unlock(&fifo->lock);
+
   return count;
 }
 //----------------------------------------------------------------------------
@@ -245,34 +320,52 @@ int vsfifo_from_pipe(
 {
   int tail, head;
   if (count <= 0) return 0; // bad argument
+  
+  vsmutex_lock(&fifo->lock);
+
   tail = fifo->size - fifo->count;
   if (count > tail) count = tail;
   tail = fifo->data + fifo->size - fifo->in;
   if (count <= tail)
   { // read all from pipe at once
+    vsmutex_unlock(&fifo->lock);
+    
     count = read_fn(fd, (void*) fifo->in, count);
     if (count < 0) return -1; // broken pipe
+
+    vsmutex_lock(&fifo->lock);
     if (count == tail) fifo->in = fifo->data;
     else               fifo->in += count;
   }
   else // count > tail
   { // read from pipe by two pass
     head = count - tail;
+    vsmutex_unlock(&fifo->lock);
+    
     count = read_fn(fd, (void*) fifo->in, tail);
     if (count < 0) return -1; // broken pipe
+
+    vsmutex_lock(&fifo->lock);
     if (count != tail) // count < tail
     {
       fifo->in += count;
     }
     else // count == tail
     {
+      vsmutex_unlock(&fifo->lock);
+
       count = read_fn(fd, (void*) fifo->data, head);
       if (count < 0) return -1; // broken pipe
+
+      vsmutex_lock(&fifo->lock);
       fifo->in = fifo->data + count;
       count += tail;
     }
   }
   fifo->count += count;
+
+  vsmutex_unlock(&fifo->lock);
+
   return count;
 }
 //----------------------------------------------------------------------------
@@ -284,33 +377,51 @@ int vsfifo_to_pipe(
 {
   int tail, head;
   if (count <= 0) return 0; // bad argument
+  
+  vsmutex_lock(&fifo->lock);
+
   if (count > fifo->count) count = fifo->count;
   tail = fifo->data + fifo->size - fifo->out;
   if (count <= tail)
   { // write to pipe at once
+    vsmutex_unlock(&fifo->lock);
+
     count = write_fn(fd, (const void*) fifo->out, count);
     if (count < 0) return -1; // broken pipe
+
+    vsmutex_lock(&fifo->lock);
     if (count == tail) fifo->out = fifo->data;
     else               fifo->out += count;
   }
   else // count > tail
   { // write to pipe by two pass
     head = count - tail;
+    vsmutex_unlock(&fifo->lock);
+    
     count = write_fn(fd, (const void*) fifo->out, tail);
     if (count < 0) return -1; // broken pipe
+    
+    vsmutex_lock(&fifo->lock);
     if (count != tail) // count < tail
     {
        fifo->out += count;
     }
     else // count == tail
     {
+      vsmutex_unlock(&fifo->lock);
+
       count = write_fn(fd, (const void*) fifo->data, head);
       if (count < 0) return -1; // broken pipe
+    
+      vsmutex_lock(&fifo->lock);
       fifo->out = fifo->data + count;
       count += tail;
     }
   }
   fifo->count -= count;
+
+  vsmutex_unlock(&fifo->lock);
+
   return count;
 }
 #endif // VSFIFO_PIPE
