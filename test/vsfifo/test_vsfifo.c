@@ -23,9 +23,9 @@ void *thread()
   {
     int ret;
 
-    ret = vsfifo_read(fifo, (void *)&buf, sizeof(buf));
+    ret = vsfifo_read_part(fifo, (void *)&buf, sizeof(buf));
 
-    printf("vsfifo_read: ret=%i data=0x%X\n", ret, buf);
+    printf("vsfifo_read_part: ret=%i data=0x%X\n", ret, buf);
   }
 }
 //----------------------------------------------------------------------------

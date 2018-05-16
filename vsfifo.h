@@ -55,11 +55,14 @@ int vsfifo_write(vsfifo_t *fifo, const void *buf, int count);
 // read from FIFO to memory buffer non-block
 int vsfifo_read_nb(vsfifo_t *fifo, void *buf, int count);
 
-// read (and not eject!) from FIFO to memory buffer non-block
-int vsfifo_read_back(vsfifo_t *fifo, void *buf, int count);
+// read part from FIFO to memory buffer (block thread if FIFO empty)
+int vsfifo_read_part(vsfifo_t *fifo, void *buf, int count);
 
 // read from FIFO to memory buffer
 int vsfifo_read(vsfifo_t *fifo, void *buf, int count);
+
+// read (and not eject!) from FIFO to memory buffer non-block
+int vsfifo_read_back(vsfifo_t *fifo, void *buf, int count);
 
 // read from FIFO nowhere (to /dev/null)
 int vsfifo_to_nowhere(vsfifo_t *fifo, int count);

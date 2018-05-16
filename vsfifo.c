@@ -28,7 +28,7 @@ void vsfifo_show(vsfifo_t *fifo)
   printf("count: %d\n", fifo->count);
   printf("size: %d\n", fifo->size);
 
-  vssem_getvalue(&(fifo->read_sem), &semval);
+  vssem_getvalue(&fifo->read_sem, &semval);
 
   printf("sem_value: %d\n", semval);
 }
@@ -78,7 +78,8 @@ int vsfifo_free(vsfifo_t *fifo)
 // write to FIFO from memory buffer
 int vsfifo_write(vsfifo_t *fifo, const void *buf, int count)
 {
-  int tail, head;
+  int tail, head, semval;
+  
   if (count <= 0) return 0; // bad argument
   tail = fifo->size - fifo->count;
   if (count > tail) count = tail;
@@ -98,7 +99,9 @@ int vsfifo_write(vsfifo_t *fifo, const void *buf, int count)
   }
   fifo->count += count;
 
-  vssem_post(&(fifo->read_sem));
+  vssem_getvalue(&fifo->read_sem, &semval);
+  if (semval == 0)
+    vssem_post(&fifo->read_sem);
 
   return count;
 }
@@ -130,6 +133,37 @@ int vsfifo_read_nb(vsfifo_t *fifo, void *buf, int count)
   return count;
 }
 //----------------------------------------------------------------------------
+// read part from FIFO to memory buffer (block thread if FIFO empty)
+int vsfifo_read_part(vsfifo_t *fifo, void *buf, int count)
+{
+  int tail, head;
+  if (count <= 0) return 0; // bad argument
+  
+  // wait until fifo empty
+  while (fifo->count == 0)
+    vssem_wait(&fifo->read_sem);
+
+  if (count > fifo->count) count = fifo->count;
+
+  tail = fifo->data + fifo->size - fifo->out;
+  if (count <= tail)
+  { // copy all at once
+    memcpy(buf, (const void*) fifo->out, (size_t) count);
+    if (count == tail) fifo->out = fifo->data;
+    else               fifo->out += count;
+  }
+  else // count > tail
+  { // copy by two pass
+    memcpy(buf, (const void*) fifo->out, (size_t) tail);
+    head = count - tail;
+    memcpy((void*) (((char*) buf) + tail), (const void*) fifo->data,
+           (size_t) head);
+    fifo->out = fifo->data + head;
+  }
+  fifo->count -= count;
+  return count;
+}
+//----------------------------------------------------------------------------
 // read from FIFO to memory buffer
 int vsfifo_read(vsfifo_t *fifo, void *buf, int count)
 {
@@ -138,7 +172,7 @@ int vsfifo_read(vsfifo_t *fifo, void *buf, int count)
 
   // wait until fifo size lesser then requested
   while (count > fifo->count)
-    vssem_wait(&(fifo->read_sem));
+    vssem_wait(&fifo->read_sem);
 
   tail = fifo->data + fifo->size - fifo->out;
   if (count <= tail)
