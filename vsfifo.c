@@ -1,6 +1,6 @@
 /*
  * Very Simple FIFO (Very Simple Remote Procedure Call (VSRPC) project)
- * Version: 0.9
+ * Version: 0.9.1
  * File: "vsfifo.c"
  * (C) 2007-2018 Alex Grinkov <a.grinkov@gmail.com>
  */
@@ -182,6 +182,30 @@ int vsfifo_read_nb(vsfifo_t *fifo, void *buf, int count)
   return count;
 }
 //----------------------------------------------------------------------------
+// get pointer to ready data in FIFO non-block
+int vsfifo_get_nb(vsfifo_t *fifo, void **ptr, int count)
+{
+  int tail;
+  if (count <= 0) return 0; // bad argument
+  
+  vsmutex_lock(&fifo->lock);
+  
+  if (count > fifo->count) count = fifo->count;
+  tail = fifo->data + fifo->size - fifo->out;
+  if (count > tail) count = tail;
+  *ptr = fifo->out;
+  if (count == tail)
+    fifo->out = fifo->data;
+  else
+    fifo->out += count;
+  fifo->count -= count;
+    
+  vsmutex_unlock(&fifo->lock);
+
+  return count;
+
+}
+//----------------------------------------------------------------------------
 // read part from FIFO to memory buffer (block thread if FIFO empty)
 int vsfifo_read_part(vsfifo_t *fifo, void *buf, int count)
 {
@@ -217,6 +241,37 @@ int vsfifo_read_part(vsfifo_t *fifo, void *buf, int count)
   }
   fifo->count -= count;
 
+  vsmutex_unlock(&fifo->lock);
+
+  return count;
+}
+//----------------------------------------------------------------------------
+// get pointer to ready data in FIFO (block thread if FIFO empty)
+int vsfifo_get_part(vsfifo_t *fifo, void **ptr, int count)
+{
+  int tail;
+  if (count <= 0) return 0; // bad argument
+  
+  vsmutex_lock(&fifo->lock);
+  
+  // wait until fifo empty
+  while (fifo->count == 0)
+  {
+    vsmutex_unlock(&fifo->lock);
+    vssem_wait(&fifo->read_sem);
+    vsmutex_lock(&fifo->lock);
+  }
+
+  if (count > fifo->count) count = fifo->count;
+  tail = fifo->data + fifo->size - fifo->out;
+  if (count > tail) count = tail;
+  *ptr = fifo->out;
+  if (count == tail)
+    fifo->out = fifo->data;
+  else
+    fifo->out += count;
+  fifo->count -= count;
+    
   vsmutex_unlock(&fifo->lock);
 
   return count;

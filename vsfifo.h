@@ -1,6 +1,6 @@
 /*
  * Very Simple FIFO (Very Simple Remote Procedure Call (VSRPC) project)
- * Version: 0.9
+ * Version: 0.9.1
  * File: "vsfifo.h"
  * (C) 2007-2018 Alex Grinkov <a.grinkov@gmail.com>
  */
@@ -56,8 +56,14 @@ int vsfifo_write(vsfifo_t *fifo, const void *buf, int count);
 // read from FIFO to memory buffer non-block
 int vsfifo_read_nb(vsfifo_t *fifo, void *buf, int count);
 
+// get pointer to ready data in FIFO non-block
+int vsfifo_get_nb(vsfifo_t *fifo, void **ptr, int count);
+
 // read part from FIFO to memory buffer (block thread if FIFO empty)
 int vsfifo_read_part(vsfifo_t *fifo, void *buf, int count);
+
+// get pointer to ready data in FIFO (block thread if FIFO empty)
+int vsfifo_get_part(vsfifo_t *fifo, void **ptr, int count);
 
 // read from FIFO to memory buffer at once
 int vsfifo_read(vsfifo_t *fifo, void *buf, int count);
