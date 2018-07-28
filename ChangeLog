@@ -3,6 +3,10 @@ This is the ChangeLog of Very Simple Remote Procedure Call Project (VSRPC)
  - removed
  * changed
 
+2018.07.28 [grinkov]
+ * fix bug in vsrps_str_unpack()
+
+
 2015.02.05 [grinkov]
  + add vsfifo_write_part() method
  + add mutex lock to `vsfifo_t`

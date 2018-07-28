@@ -908,14 +908,14 @@ char *vsrpc_pack_str(const char *str)
   if (str == (char*) NULL) return (char*) NULL; // bad argument
 
   // calculate size of output string
-  cnt = 0;
-  src = (char*)str;
-  do {
-    c = *src++;
-    if (strchr(" \t\\\n\r", c) != (char*) NULL && c != '\0')
-      cnt++;
+  cnt = 1;
+  src = (char*) str;
+  while ((c = *src++) != '\0')
+  {
+    if (strchr("\\ \t\n\r", c) != (char*) NULL)
+      cnt++; // add for backslash
     cnt++;
-  } while (c != '\0');
+  }
 
   // check if string is empty and cnt = 1
   if (cnt == 1)
@@ -949,7 +949,7 @@ char *vsrpc_pack_str(const char *str)
 // unpack string ('\ ', '\t', '\\', '\n', '\r', '\0')
 char *vsrpc_unpack_str(const char *str)
 {
-  char c, p, *src, *dst, *out;
+  char c, *src, *dst, *out;
   int cnt;
 
   if (str == (char*) NULL) return (char*) NULL; // bad argument
@@ -965,13 +965,12 @@ char *vsrpc_unpack_str(const char *str)
 
   // calculate size of output string
   cnt = 0;
-  src = (char*)str;
-  p = '\0';
+  src = (char*) str;
   do {
     c = *src++;
-    if (c != '\\' || p == '\\')
-      cnt++;
-    p = c;
+    if (c == '\\')
+      c = *src++;
+    cnt++;
   } while (c != '\0');
 
   // allocate memory for output string
