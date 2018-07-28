@@ -5,7 +5,9 @@ This is the ChangeLog of Very Simple Remote Procedure Call Project (VSRPC)
 
 2018.07.28 [grinkov]
  * fix bug in vsrps_str_unpack()
+ * fix bug in vsrpc_str2argv()
 
+<-- *** -->
 
 2015.02.05 [grinkov]
  + add vsfifo_write_part() method

@@ -1054,67 +1054,85 @@ char **vsrpc_str2argv(const char *str)
   int argc; // argument index/counter
   char **argv; // return value
   int state; // 0-find_first, 1-find_last
-  char c, p, *src, *dst, *ptr;
+  int i;
+  char c, *src, *dst, *ptr;
 
   // count argc
   argc = state = 0;
   src = (char*) str;
-  p = '\0'; // init previous char
   do {
     c = *src++;
-    if ( (strchr(VSRPC_DELIMETERS, (int) c) == (char*) NULL || p == '\\')
-          && c != '\0' )
+    if (c == '\\')
+    {
+      c = *src++;
+      if (c != '\0')
+      { // current symbol is not delimeter and is not end of string
+        if (state == 0) state = 1;
+	continue;
+      }
+    }
+    else if ((strchr(VSRPC_DELIMETERS, (int) c) == (char*) NULL) && c != '\0')
     { // current symbol is not delimeter and is not end of string
       if (state == 0) state = 1;
+      continue;
     }
-    else
-    { // current symbol is delimeter or end of string
-      if (state != 0) { state = 0; argc++; }
+    
+    // current symbol is delimeter or end of string
+    if (state != 0)
+    {
+      state = 0;
+      argc++;
     }
-    p = c; // store previous char
   } while (c != '\0');
 
-  if (argc == 0)
-    return (char**) NULL; // bad argument
-
   // malloc argv array
-  argv = (char**) vsrpc_malloc ((argc + 1) * (int)sizeof(char*));
-  if (argv == (char**) NULL) return (char**) NULL; // memory exeption
-
-  // fill argv
+  argv = (char**) malloc((argc + 1) * (int) sizeof(char*));
+  if (argv == (char**) NULL)
+    return argv; // memory exeption
+  
+  // fill argv[]
   argc = state = 0;
   src = ptr = (char*) str;
   do {
     c = *src;
-    if ( (strchr(VSRPC_DELIMETERS, (int)c) == (char*) NULL || p == '\\')
-          && c != '\0' )
-    { // current symbol is not delimeter and is not end of string
-      if (state == 0) { state = 1; ptr = src; }
-    }
-    else
-    { // current symbol is delimeter or end of string
-      if (state != 0)
-      {
-        state = (int) (src - ptr);
-        dst = vsrpc_malloc(state + 1);
-        if (dst != (char*) NULL)
-        {
-          memcpy((void*) dst, (const void*) ptr, (size_t) state);
-          dst[state] = '\0';
-          ptr = vsrpc_unpack_str(dst); // unpack argument
-          vsrpc_free(dst);
-          dst = ptr;
-        }
-        if ((argv[argc++] = dst) == (char*) NULL)
-        { // memory exeption
-          vsrpc_free_argv(argv);
-          return (char**) NULL; // abnormal return
-        }
-        state = 0;
+    if (c == '\\')
+    {
+      c = src[1];
+      if (c != '\0')
+      { // current symbol is not delimeter and is not end of string
+        if (state == 0) { state = 1; ptr = src; };
+	src += 2;
+	continue;
       }
     }
+    else if ((strchr(VSRPC_DELIMETERS, (int) c) == (char*) NULL) && c != '\0')
+    { // current symbol is not delimeter and is not end of string
+      if (state == 0) { state = 1; ptr = src; }
+      src++;
+      continue;
+    }
+  
+    // current symbol is delimeter or end of string
+    if (state != 0)
+    {
+      state = 0;
+
+      i = (int) (src - ptr);
+      dst = (char*) malloc(i + 1);
+      if (dst == (char*) NULL)
+      { // memory exeption
+	for (i = 0; i < argc; i++)
+          free((void*) argv[i]);
+	free((void*) argv);
+        return (char**) NULL;
+      }
+ 
+      memcpy((void*) dst, (const void*) ptr, (size_t) i);
+      dst[i] = '\0';
+      argv[argc++] = vsrpc_unpack_str(dst); // unpack argument
+      free((void*) dst);
+    }
     src++;
-    p = c; // store previous char
   } while (c != '\0');
 
   argv[argc] = (char*) NULL; // place to end
