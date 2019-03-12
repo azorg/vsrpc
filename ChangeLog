@@ -3,6 +3,9 @@ This is the ChangeLog of Very Simple Remote Procedure Call Project (VSRPC)
  - removed
  * changed
 
+2019.03.12 [grinkov]
+ * update "socklib" (v0.13.1)
+
 2018.07.28 [grinkov]
  * fix bug in vsrps_str_unpack()
  * fix bug in vsrpc_str2argv()

@@ -1,10 +1,8 @@
 /*
  * Simple wrappers to work with UNIX-like TCP/IP sockets
- * Version: 0.13
+ * Version: 0.13.1
  * File: "socklib.c"
- * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
- * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
- * Last update: 2015.09.05
+ * Last update: 2019.03.12
  */
 
 //----------------------------------------------------------------------------
@@ -49,6 +47,7 @@ static const char *sl_errors[] = {
   "no error",
   "initialize error",
   "socket() error",
+  "setsockopt() error",
   "inet_aton() error",
   "bind() error",
   "listen() error",
@@ -135,6 +134,7 @@ int sl_get_last_error()
 int sl_make_server_socket_ex(const char *listen_ip, int port, int backlog)
 {
   int sock; // socket ID
+  int opt;
   struct sockaddr_in saddr; // address of socket
   struct in_addr iaddr;
 
@@ -145,6 +145,10 @@ int sl_make_server_socket_ex(const char *listen_ip, int port, int backlog)
   sock = (int) socket(AF_INET, SOCK_STREAM, 0); // get socket
   if (sock < 0)
     return SL_ERROR_SOCKET;
+
+  // setsockopt(...)
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    return SL_ERROR_SETSOCKOPT;
 
   // bind(...)
   memset((void*) &saddr, (int) 0, (size_t) sizeof(saddr)); // clear address
@@ -215,6 +219,27 @@ int sl_connect_to_server(const char *host, int port)
 }
 //----------------------------------------------------------------------------
 // close socket
+int sl_close(int fd)
+{
+  int ret;
+
+  if (!sl_initialized)
+    return SL_ERROR_NOTINIT;
+
+#ifdef SL_WIN32
+  ret = closesocket(fd);
+  if (ret != 0)
+    return SL_ERROR_DISCONNECT;
+#else // SL_WIN32
+  ret = close(fd); // close file descriptor
+  if (ret != 0)
+    return SL_ERROR_DISCONNECT;
+#endif  // SL_WIN32
+
+  return 0;
+}
+//----------------------------------------------------------------------------
+// shutdown and close socket
 int sl_disconnect(int fd)
 {
   int ret;
@@ -226,19 +251,7 @@ int sl_disconnect(int fd)
   if (ret != 0)
     return SL_ERROR_DISCONNECT;
 
-#ifdef SL_WIN32
-  ret = closesocket(fd);
-  if (ret != 0)
-    return SL_ERROR_DISCONNECT;
-
-#else // SL_WIN32
-
-  ret = close(fd); // close file descriptor
-  if (ret != 0)
-    return SL_ERROR_DISCONNECT;
-#endif  // SL_WIN32
-
-  return SL_SUCCESS;
+  return sl_close(fd);
 }
 //----------------------------------------------------------------------------
 // accept wrapper (return file descriptor or -1 on error)

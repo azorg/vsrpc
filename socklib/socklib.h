@@ -1,10 +1,8 @@
 /*
  * Simple wrappers to work with UNIX-like TCP/IP sockets
- * Version: 0.13
+ * Version: 0.13.1
  * File: "socklib.h"
- * (C) 2008-2015 Alex  Grinkov     <a.grinkov@gmail.com>
- * (C) 2008-2009 Anton Shmigirilov <shmigirilov@gmail.com>
- * Last update: 2015.09.05
+ * Last update: 2019.03.12
  */
 
 #ifndef SOCKLIB_H
@@ -45,25 +43,26 @@ extern "C" {
 #endif // SL_WIN32
 //----------------------------------------------------------------------------
 // error codes
-#define SL_SUCCESS               0
-#define SL_ERROR_INIT           -1
-#define SL_ERROR_SOCKET         -2
-#define SL_ERROR_ADDR           -3
-#define SL_ERROR_BIND           -4
-#define SL_ERROR_LISTEN         -5
-#define SL_ERROR_RESOLVE        -6
-#define SL_ERROR_CONNECT        -7
-#define SL_ERROR_ACCEPT         -8
-#define SL_ERROR_POOL           -9
-#define SL_ERROR_SELECT         -10
-#define SL_ERROR_READ           -11
-#define SL_ERROR_WRITE          -12
-#define SL_ERROR_DISCONNECT     -13
-#define SL_ERROR_ALREADY_INIT   -14
-#define SL_ERROR_NOTINIT        -15
-#define SL_TIMEOUT              -16
+#define SL_SUCCESS             0
+#define SL_ERROR_INIT         -1
+#define SL_ERROR_SOCKET       -2
+#define SL_ERROR_SETSOCKOPT   -3
+#define SL_ERROR_ADDR         -4
+#define SL_ERROR_BIND         -5
+#define SL_ERROR_LISTEN       -6
+#define SL_ERROR_RESOLVE      -7
+#define SL_ERROR_CONNECT      -8
+#define SL_ERROR_ACCEPT       -9
+#define SL_ERROR_POOL         -10
+#define SL_ERROR_SELECT       -11
+#define SL_ERROR_READ         -12
+#define SL_ERROR_WRITE        -13
+#define SL_ERROR_DISCONNECT   -14
+#define SL_ERROR_ALREADY_INIT -15
+#define SL_ERROR_NOTINIT      -16
+#define SL_TIMEOUT            -17
 
-#define SL_NUM_ERRORS           17
+#define SL_NUM_ERRORS         18
 //----------------------------------------------------------------------------
 // initialize network subsystem
 int sl_init(void);
@@ -87,6 +86,9 @@ int sl_make_server_socket(int port); // listen_ip="0.0.0.0" backlog=1
 int sl_connect_to_server(const char *host, int port);
 //----------------------------------------------------------------------------
 // close socket
+int sl_close(int fd);
+//----------------------------------------------------------------------------
+// shutdown and close socket
 int sl_disconnect(int fd);
 //----------------------------------------------------------------------------
 // accept wrapper (return file descriptor or -1 on error)
